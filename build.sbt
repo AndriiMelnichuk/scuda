@@ -5,12 +5,12 @@ version := "0.1"
 scalaVersion := "3.3.1"
 
 // jcuda
-libraryDependencies += "org.jcuda" % "jcuda" % "11.8.0"
-libraryDependencies += "org.jcuda" % "jcuda-natives" % "11.8.0"
+libraryDependencies += "org.jcuda" % "jcuda" % "12.6.0"
+libraryDependencies += "org.jcuda" % "jcuda-natives" % "12.6.0"
 
 // jcublas
-libraryDependencies += "org.jcuda" % "jcublas" % "11.8.0"
-libraryDependencies += "org.jcuda" % "jcublas-natives" % "11.8.0"
+libraryDependencies += "org.jcuda" % "jcublas" % "12.6.0"
+libraryDependencies += "org.jcuda" % "jcublas-natives" % "12.6.0"
 
 
 // scalatest
