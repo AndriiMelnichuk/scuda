@@ -15,3 +15,6 @@ libraryDependencies += "org.jcuda" % "jcublas-natives" % "12.6.0"
 
 // scalatest
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.17" % Test
+
+// parallel collections
+libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
