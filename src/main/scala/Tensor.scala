@@ -16,48 +16,59 @@ import scala.compiletime.ops.float
 
 import scala.collection.parallel.CollectionConverters._
 
-class Tensor(computeStorage: () => Storage):
-    lazy val storage: Storage = computeStorage()
+class Tensor(val origin: GeneralFunction):
+    
+    // val origin
+
+    lazy val storage: Storage = origin.forward
     override def toString(): String = storage.toString()
-    def +(other: Tensor) = new Tensor(() => this.storage + other.storage)
-    def -(other: Tensor) = new Tensor(() => this.storage - other.storage)
-    def *(other: Tensor) = new Tensor(() => this.storage * other.storage)
-    def /(other: Tensor) = new Tensor(() => this.storage / other.storage)
-    def **(other: Tensor) = new Tensor(() => this.storage ** other.storage)
+    def +(other: Tensor) = new Tensor(SumTensor(this, other))
+    // def -(other: Tensor) = new Tensor(() => this.storage - other.storage)
+    def *(other: Tensor) = new Tensor(ProductTensor(this, other))
+    // def /(other: Tensor) = new Tensor(() => this.storage / other.storage)
+    // def **(other: Tensor) = new Tensor(() => this.storage ** other.storage)
     
-    def +(alpha: Float) = new Tensor(() => this.storage + alpha)
-    def -(alpha: Float) = new Tensor(() => this.storage - alpha)
-    def *(alpha: Float) = new Tensor(() => this.storage * alpha)
-    def /(alpha: Float) = new Tensor(() => this.storage / alpha)
+    // def +(alpha: Float) = new Tensor(() => this.storage + alpha)
+    // def -(alpha: Float) = new Tensor(() => this.storage - alpha)
+    // def *(alpha: Float) = new Tensor(() => this.storage * alpha)
+    // def /(alpha: Float) = new Tensor(() => this.storage / alpha)
     
-    def toCpu(): Tensor = new Tensor(() => this.storage.toCpu())
-    def toCuda(): Tensor = new Tensor(() => this.storage.toCuda())
+    // def toCpu(): Tensor = new Tensor(() => this.storage.toCpu())
+    // def toCuda(): Tensor = new Tensor(() => this.storage.toCuda())
 
-object Tensor:
-    def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
-
-    def apply(data: Seq[Float], shape: Seq[Int]) = new Tensor(() => {
-        if shape.product != data.length then throw new Exception("Elligal shape")
-        if shape.isEmpty then throw new Exception("Shape empty")
-        ArrayStorage(data.toArray, shape)
-    })
-
-    def apply(data: Seq[Float], storageType: String) = new Tensor(() => {
-        storageType.toLowerCase match
-            case "cpu" => ArrayStorage(data.toArray, Seq(data.length))
-            case "cuda" => CudaStorage(data.toArray, Seq(data.length))
-            case _ => throw new Exception("Unknown device type")
-    })
-
-    def apply(data: Seq[Float], shape: Seq[Int], storageType: String) = new Tensor(() => {
-        if shape.product != data.length then throw new Exception("Elligal shape")
-        if shape.isEmpty then throw new Exception("Shape empty")
-        storageType.toLowerCase match
-            case "cpu" => ArrayStorage(data.toArray, shape)
-            case "cuda" => CudaStorage(data.toArray, shape)
-            case _ => throw new Exception("Unknown device type")
-    })
     
+
+// object Tensor:
+//     def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
+
+//     def apply(data: Seq[Float], shape: Seq[Int]) = new Tensor(() => {
+//         if shape.product != data.length then throw new Exception("Elligal shape")
+//         if shape.isEmpty then throw new Exception("Shape empty")
+//         ArrayStorage(data.toArray, shape)
+//     })
+
+//     def apply(data: Seq[Float], storageType: String) = new Tensor(() => {
+//         storageType.toLowerCase match
+//             case "cpu" => ArrayStorage(data.toArray, Seq(data.length))
+//             case "cuda" => CudaStorage(data.toArray, Seq(data.length))
+//             case _ => throw new Exception("Unknown device type")
+//     })
+
+//     def apply(data: Seq[Float], shape: Seq[Int], storageType: String) = new Tensor(() => {
+//         if shape.product != data.length then throw new Exception("Elligal shape")
+//         if shape.isEmpty then throw new Exception("Shape empty")
+//         storageType.toLowerCase match
+//             case "cpu" => ArrayStorage(data.toArray, shape)
+//             case "cuda" => CudaStorage(data.toArray, shape)
+//             case _ => throw new Exception("Unknown device type")
+//     })
+    
+//     def fill(shape: Seq[Int])(v: Float) = new Tensor(() => {
+//         if shape.isEmpty then throw new Exception("Shape empty")
+//         if shape.filter(_ <= 0).nonEmpty then Exception("Elligal shape")
+//         ArrayStorage(Array.fill(shape.product)(v), shape)
+//         ???
+//     })
 
 trait Storage:
     val shape: Seq[Int]
@@ -127,9 +138,6 @@ class ArrayStorage(
     def toCpu(): ArrayStorage = new ArrayStorage(storage.clone(), shape)
 
     def toCuda(): CudaStorage = new CudaStorage(host2device(storage, shape.product), shape)
-
-    
-
 
 class CudaStorage(
     val storage: Pointer, 
