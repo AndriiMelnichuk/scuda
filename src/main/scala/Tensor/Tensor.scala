@@ -12,23 +12,21 @@ import scala.compiletime.ops.float
 
 import scala.collection.parallel.CollectionConverters._
 
-class Tensor(val origin: GeneralFunction, val isGrad: Boolean):
+// hasVar - is variable is in graph
+// hasVar + origin.isEmpty => variable wich will have gradient
+class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 	lazy val storage: Storage = origin.forward
 	
 	override def toString(): String = storage.toString()
 	
 	def +(other: Tensor) = 
-		val bf = () => Storage.ones(this.storage)
-		val rf = (last: Storage) => last
-		new Tensor(
-			GeneralFunction(
-				Seq(this, other),
-				this.storage + other.storage,
-				Seq(bf, bf),
-				Seq(rf, rf)
-			),
-			false
-		)
+		val a = this
+		val b = other
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a, b)
+			lazy val forward = args(0).storage + args(1).storage
+			def backward(arg: Tensor, chainGrad: Storage) = chainGrad
+		}, a.hasVar || b.hasVar)
 
 	// def -(other: Tensor) = new Tensor(
 	// 	GeneralFunction(
@@ -59,19 +57,19 @@ class Tensor(val origin: GeneralFunction, val isGrad: Boolean):
 	// 	)
 	// )
 	
-	def T: Tensor = ???
+	// def T: Tensor = ???
 
-	def **(other: Tensor) = new Tensor(
-		GeneralFunction(
-			Seq(this, other),
-			this.storage ** other.storage,
-			Seq(() => other.storage.T, () => this.storage.T),
-			Seq(_ ** other.storage.T, this.storage.T ** _)
-		),
-		false
-	)
-
-		// new Tensor(() => this.storage ** other.storage)
+	def **(other: Tensor) = 
+		val a = this
+		val b = other
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a, b)
+			lazy val forward = args(0).storage ** args(1).storage
+			def backward(arg: Tensor, chainGrad: Storage) =
+				arg match
+					case a => chainGrad ** b.storage.T
+					case b => a.storage.T ** chainGrad
+		}, a.hasVar || b.hasVar)
 	
 	// def +(alpha: Float) = new Tensor(() => this.storage + alpha)
 	// def -(alpha: Float) = new Tensor(() => this.storage - alpha)
@@ -85,15 +83,14 @@ class Tensor(val origin: GeneralFunction, val isGrad: Boolean):
 
 object Tensor:
 //     def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
-	def apply(data: Seq[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = new Tensor(
-		GeneralFunction(
-			Seq(),
-			Storage(data, shape, device),
-			Seq(),
-			Seq()
-		),
-		isGrad
-	)
+	def apply(data: Seq[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq()
+			lazy val forward: Storage = Storage(data, shape, device)
+			def backward(argument: Tensor, chainGrad: Storage): Storage = 
+				argument.storage match
+					case forward => Storage.ones(forward)
+		}, isGrad)
 
 //     def apply(data: Seq[Float], shape: Seq[Int]) = new Tensor(() => {
 //         if shape.product != data.length then throw new Exception("Elligal shape")

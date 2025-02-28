@@ -1,61 +1,76 @@
 package scuda.Tensor
 
+import jcuda.Pointer
+import jcuda.runtime._
+import jcuda.runtime.JCuda._
+import jcuda.Sizeof
+import jcuda.jcublas.*
+import jcuda.driver.CUmodule
+import jcuda.driver.CUfunction
+import jcuda.driver.JCudaDriver
 
+// class GeneralFunction(
+// 	arguments: => Seq[Tensor], 
+// 	forwardFun: => Storage, 
+// 	backwardFun: => Seq[() => Storage],
+// 	reducerFun: => Seq[Storage => Storage]
+// ):
+// 	def args: Seq[Tensor] = arguments
+// 	def forward: Storage = forwardFun
+// 	def backward: Seq[() => Storage] = backwardFun
+// 	def reducer: Seq[Storage => Storage] = reducerFun
 
-// def onesLike(a: Tensor): Storage = 
-// 	val storage = a.storage
-// 	val shape = a.storage.shape
-// 	val r = Seq.fill(shape.product)(1f)
-// 	storage match
-// 		case v: ArrayStorage => ArrayStorage(r.toArray, shape)
-// 		case v: CudaStorage => CudaStorage(r, shape)
+trait GeneralFunction:
+	lazy val args: Seq[Tensor]
+	lazy val forward: Storage
+	def backward(argument: Tensor, chainGrad: Storage): Storage
+	def elementalBackward(chainGrad: Storage): Seq[Storage] = 
+		args.map(backward(_, chainGrad))
+		 
 
-class GeneralFunction(
-	arguments: => Seq[Tensor], 
-	forwardFun: => Storage, 
-	backwardFun: => Seq[() => Storage],
-	reducerFun: => Seq[Storage => Storage]
-):
-	def args: Seq[Tensor] = arguments
-	def forward: Storage = forwardFun
-	def backward: Seq[() => Storage] = backwardFun
-	def reducer: Seq[Storage => Storage] = reducerFun
+// Todo: not working
+class  SinTensor(x: Tensor) extends GeneralFunction:
+	lazy val args: Seq[Tensor] = Seq(x)
+	lazy val forward: Storage = 
+		x.storage match
+			case v: ArrayStorage => new ArrayStorage(v.storage.map(x => math.sin(x.toDouble).toFloat), v.shape)
+			case v: CudaStorage => 
+				val resPointer = new Pointer()
+				cudaMalloc(resPointer, v.shape.product * Sizeof.FLOAT)
+				val kernelSin = """
+        extern "C"
+        __global__ void computeSin(float *input, float *sinOut, int n) {
+            int i = blockIdx.x * blockDim.x + threadIdx.x;
+            if (i < n) {
+                sinOut[i] = sinf(input[i]);
+            }
+        }
+				"""
+				val module = CUmodule()
+				val function = CUfunction()
+				JCudaDriver.cuModuleLoadData(module, kernelSin)
+				val kernelPar = Pointer.to(
+					v.storage,
+					resPointer,
+					Pointer.to(Array(v.shape.product))
+				)
+				val blockSize = 32;
+				val gridSize = (v.shape.product + blockSize - 1) / blockSize;
+				JCudaDriver.cuLaunchKernel(function, gridSize, 1, 1, blockSize, 1, 1, 0, null, kernelPar, null);
 
-// def TensorPlus(a: Tensor, b: Tensor) =
-// 	GeneralFunction(
-// 		Seq(a,b),
-// 		a.storage + b.storage,
-// 		Seq(() => onesLike(a), () => onesLike(a))
-// 	)
+				new CudaStorage(resPointer, v.shape)
 
-
-
-
-// class CreateTensor(val array: Array[Float], shape: Seq[Int], val isGrad: Boolean) extends GeneralFunction:
-// 	def args: Seq[Tensor] = ???
-// 	def backward: Seq[()  => Storage] = ???
-
-// 	def forward: Storage = ArrayStorage(array, shape)
-	
-
-// class SinTensor(val a: Tensor) extends GeneralFunction:
-// 	def args: Seq[Tensor] = Seq(a)
-// 	def backward: Seq[()  => Storage] = Seq(() => grad)
-
-// 	def grad: Storage = 
-// 		a.storage match
-// 			case v: ArrayStorage => ArrayStorage(v.storage.map(math.cos(_).toFloat), v.shape)
-
-// 	def forward: Storage = 
-// 		a.storage match
-// 			case v: ArrayStorage => ArrayStorage(v.storage.map(math.sin(_).toFloat), v.shape)
+				// val kernelCos = """
+        // extern "C"
+        // __global__ void computeSinCos(float *input, float *cosOut, int n) {
+        //     int i = blockIdx.x * blockDim.x + threadIdx.x;
+        //     if (i < n) {
+        //         cosOut[i] = cosf(input[i]);
+        //     }
+        // }
+				// """
+				
 		
+	def backward(argument: Tensor, chainGrad: Storage): Storage = ???
 
-// class DiffTensor(val a: Tensor, val b: Tensor) extends GeneralFunction:
-// 	def args: Seq[Tensor] = Seq(a, b)
-
-// 	def forward: Storage = a.storage - b.storage
-
-// 	def backward: Seq[() => Storage] = 
-// 		Seq(() => onesLike(a), () => onesLike(a) * -1f)
 
