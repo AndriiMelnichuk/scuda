@@ -9,24 +9,32 @@ import jcuda.driver.CUmodule
 import jcuda.driver.CUfunction
 import jcuda.driver.JCudaDriver
 
-// class GeneralFunction(
-// 	arguments: => Seq[Tensor], 
-// 	forwardFun: => Storage, 
-// 	backwardFun: => Seq[() => Storage],
-// 	reducerFun: => Seq[Storage => Storage]
-// ):
-// 	def args: Seq[Tensor] = arguments
-// 	def forward: Storage = forwardFun
-// 	def backward: Seq[() => Storage] = backwardFun
-// 	def reducer: Seq[Storage => Storage] = reducerFun
-
 trait GeneralFunction:
 	lazy val args: Seq[Tensor]
 	lazy val forward: Storage
 	def backward(argument: Tensor, chainGrad: Storage): Storage
 	def elementalBackward(chainGrad: Storage): Seq[Storage] = 
 		args.map(backward(_, chainGrad))
-		 
+
+trait ReplicatibleFunction:
+	def apply(x: Tensor): Tensor
+	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction
+
+class ForwardLayer(val w: Tensor, val b: Tensor) extends ReplicatibleFunction:
+	def apply(x: Tensor): Tensor = 
+		val be = heightExpander(b, x.storage.shape(0))
+		val res = x ** (w.T) + be
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = res.origin.args
+			lazy val forward = res.storage
+			def backward(arg: Tensor, chainGrad: Storage) = res.origin.backward(arg, chainGrad)
+				
+		}, x.hasVar || b.hasVar || w.hasVar)
+
+	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ForwardLayer = 
+		val newW = opt(w.storage, grad(w))
+		val newB = opt(b.storage, grad(b))
+		new ForwardLayer(Tensor(newW, w.hasVar), Tensor(newB, w.hasVar))
 
 // Todo: not working
 class  SinTensor(x: Tensor) extends GeneralFunction:
@@ -74,3 +82,13 @@ class  SinTensor(x: Tensor) extends GeneralFunction:
 	def backward(argument: Tensor, chainGrad: Storage): Storage = ???
 
 
+def heightExpander(x: Tensor, n: Int): Tensor =
+	val host = x.storage match
+		case _: CudaStorage  => "cuda"
+		case _: ArrayStorage => "cpu"
+		
+	val ones = Tensor(Storage.ones(Seq(n, 1), host), false)
+
+	ones ** (x.T)
+
+	
