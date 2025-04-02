@@ -1,5 +1,6 @@
 package scuda.Tensor
 
+import scala.collection.parallel.CollectionConverters._
 
 class ArrayStorage(
 	val storage: Array[Float], 
@@ -55,5 +56,14 @@ class ArrayStorage(
 
 	def T: Storage = 
 		if shape.length != 2 then throw new Exception("not 2d Tensor cant be transponed")
-		ArrayStorage(storage, shape.reverse)
+		val newStorage =
+		for
+			i <- 0 until shape(1)
+			j <- 0 until shape(0)
+		yield storage(j * shape(1) + i)
 
+		ArrayStorage(newStorage.toArray, shape.reverse)
+
+	def sum: Storage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq.fill(shape.length)(1))
+
+	def item: Float = storage(0)
