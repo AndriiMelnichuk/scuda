@@ -20,6 +20,12 @@ trait Storage:
 	def toCpu(): ArrayStorage
 	def toCuda(): CudaStorage
 
+	def sum: Storage
+
+	def item: Float
+
+	
+
 object Storage:
 	def apply(data: Seq[Float], shape: Seq[Int], device: String = "cpu") = 
 		device match 

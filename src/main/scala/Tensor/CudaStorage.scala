@@ -65,13 +65,12 @@ class CudaStorage(
 							val size = shape.product
 							val d_invB = new Pointer()
 
-
 							cudaMalloc(d_invB, size * Sizeof.FLOAT)
 
 							val handle = new cublasHandle()
 							JCublas2.cublasCreate(handle)
 
-							// Заполняем массив invB значениями 1 / B
+							// fill array invB by 1 / B
 							val h_invB = new Array[Float](size)
 							cudaMemcpy(Pointer.to(h_invB), other.storage, size * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
 							if h_invB.contains(0) then throw new Exception("/ by zero")
@@ -146,9 +145,16 @@ class CudaStorage(
 			cudaMemcpy(res, storage, shape.product * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
 			new CudaStorage(res, shape)
 
+	def sum: CudaStorage = 
+		// todo: realization with CUDA power
+		this.toCpu().sum.toCuda()
+		
 	def T: Storage = 
 		if shape.length != 2 then throw new Exception("not 2d Tensor cant be transponed")
 		new CudaStorage(storage, shape.reverse)
+
+	// TODO can be optimized
+	def item = this.toCpu().item
 
 object CudaStorage:
 
