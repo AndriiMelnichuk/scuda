@@ -1,8 +1,10 @@
-package scuda.Tensor
+package scuda.tensor
 
 import scala.math.{Fractional, Numeric}
 import scala.reflect.ClassTag
 
+import scuda.tensor.cpu.ArrayStorage
+import scuda.tensor.cuda.CudaStorage
 
 
 import java.lang.instrument.Instrumentation

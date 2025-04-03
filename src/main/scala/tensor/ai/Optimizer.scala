@@ -1,4 +1,6 @@
-package scuda.Tensor
+package scuda.tensor.ai
+
+import scuda.tensor.Storage
 
 type Weight = Storage
 type Gradient = Storage

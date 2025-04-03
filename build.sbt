@@ -2,7 +2,7 @@ name := "scuda"
 
 version := "0.1"
 
-scalaVersion := "3.3.1"
+scalaVersion := "3.3.5"
 
 // jcuda
 libraryDependencies += "org.jcuda" % "jcuda" % "12.6.0"

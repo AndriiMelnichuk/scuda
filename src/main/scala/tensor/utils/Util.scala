@@ -1,4 +1,6 @@
-package scuda.Tensor
+package scuda.tensor.utils
+
+import scuda.tensor.Storage
 
 import jcuda.Pointer
 import jcuda.runtime._

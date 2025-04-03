@@ -1,5 +1,8 @@
-package scuda.Tensor
+package scuda.tensor.cpu
 
+import scuda.tensor.Storage
+import scuda.tensor.cuda.CudaStorage
+import scuda.tensor.utils.{ beautifulArrayprint, host2device }
 import scala.collection.parallel.CollectionConverters._
 
 class ArrayStorage(

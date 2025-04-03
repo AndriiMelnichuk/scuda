@@ -1,5 +1,7 @@
-package scuda.Tensor
+package scuda.tensor
 
+import scuda.tensor.cpu.ArrayStorage
+import scuda.tensor.cuda.CudaStorage
 
 trait Storage:
 	val shape: Seq[Int]
@@ -16,7 +18,7 @@ trait Storage:
 	def /(alpha: Float): Storage
 
 	def T: Storage
-	
+	// TODO: change methods toCpu, toCuda -> def to(d: Device)
 	def toCpu(): ArrayStorage
 	def toCuda(): CudaStorage
 

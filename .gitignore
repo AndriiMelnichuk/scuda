@@ -34,3 +34,4 @@ metals.sbt
 project/
 
 README.md
+/src/main/resources/

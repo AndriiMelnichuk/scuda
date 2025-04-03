@@ -1,4 +1,9 @@
-package scuda.Tensor
+package scuda.tensor.cuda
+
+import scuda.tensor.Storage
+import scuda.tensor.cpu.ArrayStorage
+import scuda.tensor.utils.{ beautifulArrayprint, device2host, host2device }
+import scala.collection.parallel.CollectionConverters._
 
 import jcuda.Pointer
 import jcuda.runtime._
@@ -6,6 +11,22 @@ import jcuda.runtime.JCuda._
 import jcuda.Sizeof
 import jcuda.jcublas.*
 
+// TODO change stule - case other: Cuda... , case _ =>.
+// other match
+// 		case _: ArrayStorage => throw new Exception("Operation cannot be performed if devise isn't same.")
+// 		case other: CudaStorage => {
+// 				val res = Pointer()
+// 				cudaMalloc(res, shape.product * Sizeof.FLOAT)
+
+// 				val handle = new cublasHandle()
+// 				JCublas2.cublasCreate(handle)
+// 				JCublas2.cublasSdgmm(handle, cublasSideMode.CUBLAS_SIDE_LEFT, 
+// 						shape.product, 1, 
+// 						this.storage, shape.product, 
+// 						other.storage, 1, 
+// 						res, shape.product
+// 				)
+// 				new CudaStorage(res, shape)
 
 class CudaStorage(
 	val storage: Pointer, 
@@ -146,7 +167,7 @@ class CudaStorage(
 			new CudaStorage(res, shape)
 
 	def sum: CudaStorage = 
-		// todo: realization with CUDA power
+		// TODO: realization with CUDA power
 		this.toCpu().sum.toCuda()
 		
 	def T: Storage = 
