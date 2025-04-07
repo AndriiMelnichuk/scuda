@@ -115,6 +115,14 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 
 	def item: Float = storage.item
 
+	def historyDrop(hasVar: Boolean): Tensor =
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq()
+			lazy val forward = storage
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				Storage.ones(storage)
+		}, hasVar)
+
 object Tensor:
 //     def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
 	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
@@ -149,7 +157,7 @@ object Tensor:
 
 	def zeros(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
 		fill(shape, 0, device, isGrad)
-		
+
 	def rand(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
 		val r = Random()
 		fill(shape, r.nextFloat(), device, isGrad)
