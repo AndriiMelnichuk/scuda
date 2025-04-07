@@ -57,20 +57,18 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 					chainGrad * a.storage
 		}, a.hasVar || b.hasVar)
 
-	
-	// def /(other: Tensor) = new Tensor(
-	// 	// () => 
-	// 	GeneralFunction(
-	// 		Seq(this, other),
-	// 		this.storage / other.storage,
-	// 		Seq(
-	// 			() => 1f / other.storage,
-	// 			() => -1f * this.storage / (other.storage * other.storage)
-	// 		)
-	// 	)
-	// )
-	
-	// def T: Tensor = ???
+	def /(other: Tensor) = 
+		val a = this
+		val b = other
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a, b)
+			lazy val forward = args(0).storage / args(1).storage
+			def backward(arg: Tensor, chainGrad: Storage) =
+				if arg == a then
+					chainGrad / b.storage
+				else
+					-chainGrad * a.storage / (b.storage * b.storage)
+		}, a.hasVar || b.hasVar)
 
 	def **(other: Tensor) = 
 		val a = this
@@ -85,13 +83,70 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 					(a.storage.T) ** chainGrad
 		}, a.hasVar || b.hasVar)
 	
-	// def +(alpha: Float) = new Tensor(() => this.storage + alpha)
-	// def -(alpha: Float) = new Tensor(() => this.storage - alpha)
-	// def *(alpha: Float) = new Tensor(() => this.storage * alpha)
-	// def /(alpha: Float) = new Tensor(() => this.storage / alpha)
+	def +(alpha: Float) =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage + alpha
+			def backward(arg: Tensor, chainGrad: Storage) = chainGrad
+		}, hasVar)
+
+	def -(alpha: Float) =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage - alpha
+			def backward(arg: Tensor, chainGrad: Storage) = chainGrad
+		}, hasVar)
 	
-	// def toCpu(): Tensor = new Tensor(() => this.storage.toCpu())
-	// def toCuda(): Tensor = new Tensor(() => this.storage.toCuda())
+	def *(alpha: Float) =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage * alpha
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				Storage.fill(chainGrad, alpha) * chainGrad
+		}, hasVar)
+	
+	def /(alpha: Float) =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage * alpha
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				Storage.fill(chainGrad, 1/alpha) * chainGrad
+		}, hasVar)
+
+	def unary_- =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = -storage
+			def backward(arg: Tensor, chainGrad: Storage) = -chainGrad
+		}, hasVar)
+
+	// TODO	Must be tested
+	def toCpu = 
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage.toCpu()
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				storage match
+					case _: ArrayStorage => chainGrad
+					case _: CudaStorage => chainGrad.toCuda()
+		}, hasVar)
+	
+	def toCuda = 
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage.toCuda()
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				storage match
+					case _: ArrayStorage => chainGrad.toCpu()
+					case _: CudaStorage => chainGrad
+		}, hasVar)
 
 	def sum: Tensor = 
 		val a = this
@@ -99,10 +154,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 			lazy val args: Seq[Tensor] = Seq(a)
 			lazy val forward = args(0).storage.sum
 			def backward(arg: Tensor, chainGrad: Storage) = 
-				chainGrad match
-					case x: ArrayStorage => Storage.fill(a.storage.shape, x.storage(0))
-					case _: CudaStorage => ???
-					// TODO CUDA STORAGE
+				Storage.fill(a.storage, chainGrad.item)
 		}, hasVar)
 
 	def T: Tensor =
@@ -124,7 +176,6 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		}, hasVar)
 
 object Tensor:
-//     def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
 	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq()
@@ -161,35 +212,6 @@ object Tensor:
 	def rand(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
 		val r = Random()
 		fill(shape, r.nextFloat(), device, isGrad)
-
-//     def apply(data: Seq[Float], shape: Seq[Int]) = new Tensor(() => {
-//         if shape.product != data.length then throw new Exception("Elligal shape")
-//         if shape.isEmpty then throw new Exception("Shape empty")
-//         ArrayStorage(data.toArray, shape)
-//     })
-
-//     def apply(data: Seq[Float], storageType: String) = new Tensor(() => {
-//         storageType.toLowerCase match
-//             case "cpu" => ArrayStorage(data.toArray, Seq(data.length))
-//             case "cuda" => CudaStorage(data.toArray, Seq(data.length))
-//             case _ => throw new Exception("Unknown device type")
-//     })
-
-//     def apply(data: Seq[Float], shape: Seq[Int], storageType: String) = new Tensor(() => {
-//         if shape.product != data.length then throw new Exception("Elligal shape")
-//         if shape.isEmpty then throw new Exception("Shape empty")
-//         storageType.toLowerCase match
-//             case "cpu" => ArrayStorage(data.toArray, shape)
-//             case "cuda" => CudaStorage(data.toArray, shape)
-//             case _ => throw new Exception("Unknown device type")
-//     })
-	
-//     def fill(shape: Seq[Int])(v: Float) = new Tensor(() => {
-//         if shape.isEmpty then throw new Exception("Shape empty")
-//         if shape.filter(_ <= 0).nonEmpty then Exception("Elligal shape")
-//         ArrayStorage(Array.fill(shape.product)(v), shape)
-//         ???
-//     })
 
 		
 

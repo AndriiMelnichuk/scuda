@@ -105,6 +105,8 @@ class CudaStorage(
 	// TODO can be optimized
 	def item = this.toCpu().item
 
+	def unary_- = this * -1
+
 object CudaStorage:
 	def apply(h_array: Iterable[Float], shape: Seq[Int]) =
 		val pointer = host2device(h_array, shape.product)

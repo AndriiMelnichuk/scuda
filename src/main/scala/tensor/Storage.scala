@@ -25,12 +25,9 @@ trait Storage:
 
 	def item: Float
 
-	// def ones(shape: Seq[Int]): Storage
-	// def zeros(shape: Seq[Int]): Storage
-	// def fill(shape: Seq[Int], value: Float): Storage
-	// def rand(shape: Seq[Int]): Storage
-	// def fill(shape: Seq[Int], value: =>Float): Storage
-	
+	def unary_- : Storage
+
+	// TODO pow
 	
 
 object Storage:
