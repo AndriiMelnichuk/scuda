@@ -18,7 +18,6 @@ trait Storage:
 	def /(alpha: Float): Storage
 
 	def T: Storage
-	// TODO: change methods toCpu, toCuda -> def to(d: Device)
 	def toCpu(): ArrayStorage
 	def toCuda(): CudaStorage
 
@@ -26,19 +25,25 @@ trait Storage:
 
 	def item: Float
 
+	// def ones(shape: Seq[Int]): Storage
+	// def zeros(shape: Seq[Int]): Storage
+	// def fill(shape: Seq[Int], value: Float): Storage
+	// def rand(shape: Seq[Int]): Storage
+	// def fill(shape: Seq[Int], value: =>Float): Storage
+	
 	
 
 object Storage:
-	def apply(data: Seq[Float], shape: Seq[Int], device: String = "cpu") = 
+	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu") = 
 		device match 
-			case "cpu" => new ArrayStorage(data.toArray, shape)
+			case "cpu" => ArrayStorage(data, shape)
 			case "cuda" => CudaStorage(data, shape)
 			case _ => throw new Exception("Uncnown device")
 
-	def fill(shape: Seq[Int], value: Float, dhost: String = "cpu"): Storage =
+	def fill(shape: Seq[Int], value: =>Float, dhost: String = "cpu"): Storage =
 		dhost match
-			case "cpu" => ArrayStorage(Array.fill(shape.product)(value), shape)
-			case "cuda" => CudaStorage(Seq.fill(shape.product)(value), shape)
+			case "cpu" => ArrayStorage.fill(shape, value)
+			case "cuda" => CudaStorage.fill(shape, value)
 			case _ => throw new Exception("Unknown device host")
 
 	def ones(shape: Seq[Int], dhost: String = "cpu"): Storage =
@@ -57,3 +62,9 @@ object Storage:
 
 	def zeros(origin: Storage) = 
 		fill(origin, 0)
+	
+	def rand(shape: Seq[Int], dhost: String = "cpu"): Storage =
+		dhost match
+			case "cpu" => ArrayStorage.rand(shape)
+			case "cuda" => CudaStorage.rand(shape)
+			case _ => throw new Exception("Unknown device host")

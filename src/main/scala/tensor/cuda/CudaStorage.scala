@@ -11,23 +11,7 @@ import jcuda.runtime.JCuda._
 import jcuda.Sizeof
 import jcuda.jcublas.*
 import scala.collection.View.FlatMap
-
-// TODO change stule - case other: Cuda... , case _ =>.
-// other match
-// 		case _: ArrayStorage => throw new Exception("Operation cannot be performed if devise isn't same.")
-// 		case other: CudaStorage => {
-// 				val res = Pointer()
-// 				cudaMalloc(res, shape.product * Sizeof.FLOAT)
-
-// 				val handle = new cublasHandle()
-// 				JCublas2.cublasCreate(handle)
-// 				JCublas2.cublasSdgmm(handle, cublasSideMode.CUBLAS_SIDE_LEFT, 
-// 						shape.product, 1, 
-// 						this.storage, shape.product, 
-// 						other.storage, 1, 
-// 						res, shape.product
-// 				)
-// 				new CudaStorage(res, shape)
+import scala.util.Random
 
 class CudaStorage(
 	val storage: Pointer, 
@@ -50,21 +34,21 @@ class CudaStorage(
 		CudaOperations.elementwiseScalarCernelExecuter(this, other, ptxFile, opName)
 
 	def +(other: Storage) =
-			elementwiseOperation(other, elementwiseCernelPath, "tensorAddition")
+		elementwiseOperation(other, elementwiseCernelPath, "tensorAddition")
 	
 	def -(other: Storage): Storage = 
 		elementwiseOperation(other, elementwiseCernelPath, "tensorSubtraction")
 	
 	def *(other: Storage): Storage = 
-			elementwiseOperation(other, elementwiseCernelPath, "tensorMultiplication")
+		elementwiseOperation(other, elementwiseCernelPath, "tensorMultiplication")
 
 	def /(other: Storage): Storage = 
-			elementwiseOperation(other, elementwiseCernelPath, "tensorDivision")
+		elementwiseOperation(other, elementwiseCernelPath, "tensorDivision")
 
 	def +(alpha: Float): Storage = 
-			elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSAddition")
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSAddition")
 	def -(alpha: Float): Storage = 
-					elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSSubtraction")
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSSubtraction")
 
 	def *(alpha: Float): Storage = 
 		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSMultiplication")
@@ -74,41 +58,41 @@ class CudaStorage(
 		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSDivision")
 			
 	def **(other: Storage): Storage = 
-			if this.shape.length != 2 || other.shape.length != 2 then 
-					throw new Exception("Operation cannot be performed if shape of Tensors isn't equal 2.")
-			if this.shape(1) != other.shape(0) then 
-					throw new Exception("Operation cannot be performed if Tensor A.shape(1) != Tensor B.shape(0)")
-			
-			other match
-					case _: ArrayStorage => 
-							throw new Exception("Operation cannot be performed if devise isn't same.")
-					case other: CudaStorage => 
-							val m = this.shape(0)
-							val k = this.shape(1)
-							val n = other.shape(1)
-							val res = Pointer()
-							cudaMalloc(res, m * n * Sizeof.FLOAT)
-							
-							val handle = new cublasHandle()
-							JCublas2.cublasCreate(handle)
-							JCublas2.cublasSgemm(handle, 
-									cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N,
-									n, m, k,
-									Pointer.to(Array[Float](1.0f)),
-									other.storage, n,
-									this.storage, k,
-									Pointer.to(Array[Float](0.0f)),
-									res, n)
-							
-							new CudaStorage(res, Seq(m, n))
+		if this.shape.length != 2 || other.shape.length != 2 then 
+			throw new Exception("Operation cannot be performed if shape of Tensors isn't equal 2.")
+		if this.shape(1) != other.shape(0) then 
+			throw new Exception("Operation cannot be performed if Tensor A.shape(1) != Tensor B.shape(0)")
+		
+		other match
+			case other: CudaStorage => 
+				val m = this.shape(0)
+				val k = this.shape(1)
+				val n = other.shape(1)
+				val res = Pointer()
+				cudaMalloc(res, m * n * Sizeof.FLOAT)
+				
+				val handle = new cublasHandle()
+				JCublas2.cublasCreate(handle)
+				JCublas2.cublasSgemm(handle, 
+					cublasOperation.CUBLAS_OP_N, cublasOperation.CUBLAS_OP_N,
+					n, m, k,
+					Pointer.to(Array[Float](1.0f)),
+					other.storage, n,
+					this.storage, k,
+					Pointer.to(Array[Float](0.0f)),
+					res, n)
+				new CudaStorage(res, Seq(m, n))
+			case _ => 
+				throw new Exception("Operation cannot be performed if devise isn't same.")
+
 
 	def toCpu(): ArrayStorage = new ArrayStorage(device2host(storage, shape), shape)
 
 	def toCuda(): CudaStorage = 
-			val res = Pointer()
-			cudaMalloc(res, shape.product * Sizeof.FLOAT)
-			cudaMemcpy(res, storage, shape.product * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
-			new CudaStorage(res, shape)
+		val res = Pointer()
+		cudaMalloc(res, shape.product * Sizeof.FLOAT)
+		cudaMemcpy(res, storage, shape.product * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
+		new CudaStorage(res, shape)
 
 	def sum: CudaStorage = 
 		// TODO: realization with CUDA power
@@ -122,8 +106,14 @@ class CudaStorage(
 	def item = this.toCpu().item
 
 object CudaStorage:
-
-	def apply(h_array: Seq[Float], shape: Seq[Int]) =
-			val pointer = host2device(h_array, shape.product)
-			new CudaStorage(pointer, shape)
-
+	def apply(h_array: Iterable[Float], shape: Seq[Int]) =
+		val pointer = host2device(h_array, shape.product)
+		new CudaStorage(pointer, shape)
+	def fill(shape: Seq[Int], value: =>Float): Storage = 
+		val newStorage = Array.fill(shape.product)(value)
+		CudaStorage(newStorage, shape)
+	def ones(shape: Seq[Int]): Storage = fill(shape, 1)
+	def zeros(shape: Seq[Int]): Storage = fill(shape, 0)
+	def rand(shape: Seq[Int]): Storage = 
+		val r = Random()
+		CudaStorage.fill(shape, r.nextFloat())

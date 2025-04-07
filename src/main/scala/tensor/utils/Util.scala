@@ -21,7 +21,7 @@ def beautifulArrayprint[T](storage: Array[T], shape: Seq[Int]): String =
 	}
 	rows.reduce(_+_)         
 
-def host2device(seq: Seq[Float], len: Int) = 
+def host2device(seq: Iterable[Float], len: Int) = 
 	val h_array = seq.toArray
 	val d_array = Pointer()
 	cudaMalloc(d_array, len * Sizeof.FLOAT)

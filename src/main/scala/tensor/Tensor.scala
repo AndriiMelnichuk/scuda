@@ -13,6 +13,7 @@ import scala.annotation.alpha
 import scala.compiletime.ops.float
 
 import scala.collection.parallel.CollectionConverters._
+import scala.util.Random
 
 // hasVar - is variable is in graph
 // hasVar + origin.isEmpty => variable wich will have gradient
@@ -116,7 +117,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 
 object Tensor:
 //     def apply(data: Seq[Float]) = new Tensor(() => ArrayStorage(data.toArray, Seq(data.length)))
-	def apply(data: Seq[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
+	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq()
 			lazy val forward: Storage = Storage(data, shape, device)
@@ -133,6 +134,25 @@ object Tensor:
 				argument.storage match
 					case forward => Storage.ones(forward)
 		}, isGrad)
+
+	def fill(shape: Seq[Int], v: =>Float, device: String = "cpu", isGrad: Boolean = false) = 
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq()
+			lazy val forward: Storage = Storage.fill(shape, v, device)
+			def backward(argument: Tensor, chainGrad: Storage): Storage = 
+				argument.storage match
+					case forward => Storage.ones(forward)
+		}, false)
+
+	def ones(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
+		fill(shape, 1, device, isGrad)	
+
+	def zeros(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
+		fill(shape, 0, device, isGrad)
+		
+	def rand(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
+		val r = Random()
+		fill(shape, r.nextFloat(), device, isGrad)
 
 //     def apply(data: Seq[Float], shape: Seq[Int]) = new Tensor(() => {
 //         if shape.product != data.length then throw new Exception("Elligal shape")
