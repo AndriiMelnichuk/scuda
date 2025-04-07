@@ -107,6 +107,9 @@ class CudaStorage(
 
 	def unary_- = this * -1
 
+	def pow(n: Float): Storage = 
+		elementwiseScalarOperation(n, elementwiseCernelPath, "tensorPow")
+
 object CudaStorage:
 	def apply(h_array: Iterable[Float], shape: Seq[Int]) =
 		val pointer = host2device(h_array, shape.product)

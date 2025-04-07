@@ -27,7 +27,7 @@ trait Storage:
 
 	def unary_- : Storage
 
-	// TODO pow
+	def pow(n: Float): Storage
 	
 
 object Storage:

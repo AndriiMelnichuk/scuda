@@ -148,6 +148,15 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 					case _: CudaStorage => chainGrad
 		}, hasVar)
 
+	def pow(n: Float) = 
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage pow n
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				chainGrad * storage.pow(n - 1) * n
+		}, hasVar)
+
 	def sum: Tensor = 
 		val a = this
 		new Tensor(new GeneralFunction {

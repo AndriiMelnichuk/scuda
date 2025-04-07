@@ -74,6 +74,9 @@ class ArrayStorage(
 
 	def unary_- = new ArrayStorage(storage.map(-_), shape)
 
+	def pow(n: Float) =
+		new ArrayStorage(storage.par.map(x => math.pow(x.toDouble,n).toFloat).toArray, shape)
+
 object ArrayStorage:
 	def apply(data: Iterable[Float], shape: Seq[Int]): ArrayStorage = 
 		new ArrayStorage(data.toArray, shape)

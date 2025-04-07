@@ -55,3 +55,10 @@ __global__ void tensorSDivision(int n, float *A, float b, float *C) {
     if (i < n) 
         C[i] = A[i] / b;
 }
+
+extern "C"
+__global__ void tensorPow(int n, float *A, float b, float *C) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i < n) 
+        C[i] = powf(A[i], b);
+}
