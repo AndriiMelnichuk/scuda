@@ -1,7 +1,8 @@
 package scuda.tensor.ai
 
 import scala.collection.parallel.CollectionConverters._
-import scuda.tensor.{ Storage, Tensor }
+import scuda.tensor.Tensor
+import scuda.tensor.storage.Storage
   
 def gradientSearch(t: Tensor): Map[Tensor, Storage] = 
   def helper(t: Tensor, accGrad: Storage): List[(Tensor, Storage)] = 

@@ -8,6 +8,7 @@ import jcuda.jcublas.*
 import jcuda.driver.CUmodule
 import jcuda.driver.CUfunction
 import jcuda.driver.JCudaDriver
+import storage.Storage
 
 trait GeneralFunction:
 	lazy val args: Seq[Tensor]

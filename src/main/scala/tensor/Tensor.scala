@@ -14,6 +14,7 @@ import scala.compiletime.ops.float
 
 import scala.collection.parallel.CollectionConverters._
 import scala.util.Random
+import storage.Storage
 
 // hasVar - is variable is in graph
 // hasVar + origin.isEmpty => variable wich will have gradient
@@ -112,7 +113,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val a = this
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a)
-			lazy val forward = storage * alpha
+			lazy val forward = storage / alpha
 			def backward(arg: Tensor, chainGrad: Storage) = 
 				Storage.fill(chainGrad, 1/alpha) * chainGrad
 		}, hasVar)
@@ -210,7 +211,7 @@ object Tensor:
 			def backward(argument: Tensor, chainGrad: Storage): Storage = 
 				argument.storage match
 					case forward => Storage.ones(forward)
-		}, false)
+		}, isGrad)
 
 	def ones(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
 		fill(shape, 1, device, isGrad)	

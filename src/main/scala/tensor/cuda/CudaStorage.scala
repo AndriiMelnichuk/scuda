@@ -1,6 +1,6 @@
 package scuda.tensor.cuda
 
-import scuda.tensor.Storage
+import scuda.tensor.storage.Storage
 import scuda.tensor.cpu.ArrayStorage
 import scuda.tensor.utils.{ beautifulArrayprint, device2host, host2device }
 import scala.collection.parallel.CollectionConverters._
@@ -27,11 +27,11 @@ class CudaStorage(
 	def elementwiseOperation(other: Storage, ptxFile: String, opName: String): Storage = 
 		if this.shape != other.shape then throw new Exception("Operation cannot be performed if shape of Tensors isn't equal.")
 		other match
-				case other: CudaStorage => CudaOperations.elementwiseCernelExecuter(this, other, ptxFile, opName)
+				case other: CudaStorage => elementwiseCernelExecuter(this, other, ptxFile, opName)
 				case _ => throw new Exception("Operation cannot be performed if devise isn't same.")
 
 	def elementwiseScalarOperation(other: Float, ptxFile: String, opName: String): Storage = 
-		CudaOperations.elementwiseScalarCernelExecuter(this, other, ptxFile, opName)
+		elementwiseScalarCernelExecuter(this, other, ptxFile, opName)
 
 	def +(other: Storage) =
 		elementwiseOperation(other, elementwiseCernelPath, "tensorAddition")
