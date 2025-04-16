@@ -77,6 +77,38 @@ class ArrayStorage(
 	def pow(n: Float) =
 		new ArrayStorage(storage.par.map(x => math.pow(x.toDouble,n).toFloat).toArray, shape)
 
+	def apply(args: Any*) =
+		def helper(index: Int, level: Int) = ???
+
+		args.foreach{
+			case i: Int => println(s"Int: $i")
+			case it: Iterable[Int] => println(s"Iterable ${it.toList}")
+			case _ => println("who knows")
+			
+		}
+		???
+
+	def cat(st: ArrayStorage, dim: Int = 0) = 
+		if dim < 0 || dim >= shape.length then
+			throw new Exception(s"Dim problem in cat:\ndim: $dim")
+		if shape.patch(dim, Nil, 1) != st.shape.patch(dim, Nil, 1) then
+			throw new Exception(s"Shape problem in cat: \nshape1: $shape, shape2: ${st.shape}")
+		
+		val x = storage.toList
+		val y = st.storage.toList
+
+		val xSize = shape.drop(dim).product
+		val ySize = st.shape.drop(dim).product
+
+		val groupedX = (x grouped xSize).toList
+		val groupedY = (y grouped ySize).toList
+
+		val res = 0.until(groupedX.length + groupedY.length).par
+		.map(i => if i % 2 == 0 then groupedX(i / 2) else groupedY(i / 2))
+		.flatten.toArray
+
+		ArrayStorage(res, shape.updated(dim, shape(dim) + st.shape(dim)))
+
 object ArrayStorage:
 	def apply(data: Iterable[Float], shape: Seq[Int]): ArrayStorage = 
 		new ArrayStorage(data.toArray, shape)
