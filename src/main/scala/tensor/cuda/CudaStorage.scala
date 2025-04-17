@@ -110,6 +110,34 @@ class CudaStorage(
 	def pow(n: Float): Storage = 
 		elementwiseScalarOperation(n, elementwiseCernelPath, "tensorPow")
 
+	def cat(st: CudaStorage, dim: Int = 0, mBlockSize: Int = 1024) = 
+		if dim < 0 || dim >= shape.length then
+			throw new Exception(s"Dim problem in cat:\ndim: $dim")
+		if shape.patch(dim, Nil, 1) != st.shape.patch(dim, Nil, 1) then
+			throw new Exception(s"Shape problem in cat: \nshape1: $shape, shape2: ${st.shape}")
+		
+		val xSize = shape.drop(dim).product
+		val ySize = st.shape.drop(dim).product
+
+		val nStorage = Pointer()
+		val nShape = shape.updated(dim, shape(dim) + st.shape(dim))
+		val m = nShape.product
+		cudaMalloc(nStorage, Sizeof.FLOAT * m)
+		val kernelParams = Pointer.to(
+			Pointer.to(Array(m)),
+			Pointer.to(storage),
+			Pointer.to(st.storage),
+			Pointer.to(Array(xSize)),
+			Pointer.to(Array(ySize)),
+			Pointer.to(nStorage)
+		)
+		val bs = if mBlockSize > m then m else mBlockSize
+		val gs = (m + mBlockSize - 1) / mBlockSize
+		cernelExecute("src/main/resources/util.ptx", "cat", kernelParams, gridDimX = gs, blockDimX = bs)  
+		new CudaStorage(nStorage, nShape)
+		// cudaMalloc(nStorage, Sizeof.FLOAT * )
+
+
 object CudaStorage:
 	def apply(h_array: Iterable[Float], shape: Seq[Int]) =
 		val pointer = host2device(h_array, shape.product)
