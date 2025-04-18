@@ -68,9 +68,11 @@ class ArrayStorage(
 
 		ArrayStorage(newStorage.toArray, shape.reverse)
 
-	def sum: Storage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq.fill(shape.length)(1))
+	def sum: Storage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq(1))
 
-	def item: Float = storage(0)
+	def item: Float = 
+		if shape == Seq(1) then storage(0)
+		else throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
 
 	def unary_- = new ArrayStorage(storage.map(-_), shape)
 
