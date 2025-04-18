@@ -30,13 +30,13 @@ class ForwardLayer(val w: Tensor, val b: Tensor) extends ReplicatibleFunction:
 		new ForwardLayer(Tensor(newW, w.hasVar), Tensor(newB, w.hasVar))
 
 object ForwardLayer:
-	def apply(inFeatures: Int, outFeatures: Int, device: String = "cpu") =
+	def apply(inFeatures: Int, outFeatures: Int)(using device: String = "cpu") =
 		val rand = scala.util.Random()
 		val ub = scala.math.sqrt(6.0 / (inFeatures + outFeatures)).toFloat
 		val lb = - ub
 
-		val w = Tensor.fill(Seq(outFeatures, inFeatures), lb + (ub - lb) * rand.nextFloat(), device, true)
-		val b = Tensor.fill(Seq(outFeatures, 1), lb + (ub - lb) * rand.nextFloat(), device, true)
+		val w = Tensor.fill(Seq(outFeatures, inFeatures), lb + (ub - lb) * rand.nextFloat(), true)
+		val b = Tensor.fill(Seq(outFeatures, 1), lb + (ub - lb) * rand.nextFloat(), true)
 		new ForwardLayer(w, b)
 
 class ReLU() extends ReplicatibleFunction:
@@ -71,11 +71,11 @@ class StableSoftmax() extends ReplicatibleFunction:
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction = StableSoftmax()
 
 def heightExpander(x: Tensor, n: Int): Tensor =
-	val host = x.storage match
+	implicit val host = x.storage match
 		case _: CudaStorage  => "cuda"
 		case _: ArrayStorage => "cpu"
 		
-	val ones = Tensor(Storage.ones(Seq(n, 1), host), false)
+	val ones = Tensor(Storage.ones(Seq(n, 1)), false)
 
 	ones ** (x.T)
 
