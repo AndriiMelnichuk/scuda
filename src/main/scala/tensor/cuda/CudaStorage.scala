@@ -100,7 +100,24 @@ class CudaStorage(
 		
 	def T: Storage = 
 		if shape.length != 2 then throw new Exception("not 2d Tensor cant be transponed")
-		new CudaStorage(storage, shape.reverse)
+		val mBlockSize = 1024
+		val m = shape(0)
+		val n = shape(1)
+		val nStorage = Pointer()
+		cudaMalloc(nStorage, Sizeof.FLOAT * shape.product)
+		val kernelParams = Pointer.to(
+			Pointer.to(Array(shape(0))),
+			Pointer.to(Array(shape(1))),
+			Pointer.to(storage),
+			Pointer.to(nStorage)
+		)
+		val bsx = if mBlockSize > m then m else mBlockSize
+		val gsx = (m + mBlockSize - 1) / mBlockSize
+		val bsy = if mBlockSize > n then n else mBlockSize
+		val gsy = (n + mBlockSize - 1) / mBlockSize
+		println(s"bsx: $bsx, gsx: $gsx, bsy: $bsy, gsy: $gsy")
+		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsy, gridDimY = gsx, blockDimX = bsy, blockDimY = bsx)
+		new CudaStorage(nStorage, shape.reverse)
 
 	// TODO can be optimized
 	def item = this.toCpu().item

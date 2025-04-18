@@ -10,3 +10,12 @@ __global__ void cat(int m, float *x, float *y, int xSize, int ySize, float *outp
 					output[i] = y[index * ySize + side - xSize];
 	}
 }
+
+// m, n - shape of input
+extern "C"
+__global__ void matrixTransposition(int m, int n, float *input, float *output){
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	if(i < n && j < m)
+		output[i * m + j] = input[j * n + i];
+}
