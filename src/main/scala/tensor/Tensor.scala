@@ -186,10 +186,10 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		}, hasVar)
 
 object Tensor:
-	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) = 
+	def apply(data: Iterable[Float], shape: Seq[Int], isGrad: Boolean = false)(using  device: String = "cpu") = 
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq()
-			lazy val forward: Storage = Storage(data, shape, device)
+			lazy val forward: Storage = Storage(data, shape)
 			def backward(argument: Tensor, chainGrad: Storage): Storage = 
 				argument.storage match
 					case forward => Storage.ones(forward)
@@ -204,24 +204,24 @@ object Tensor:
 					case forward => Storage.ones(forward)
 		}, isGrad)
 
-	def fill(shape: Seq[Int], v: =>Float, device: String = "cpu", isGrad: Boolean = false) = 
+	def fill(shape: Seq[Int], v: =>Float, isGrad: Boolean = false)(using device: String = "cpu") = 
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq()
-			lazy val forward: Storage = Storage.fill(shape, v, device)
+			lazy val forward: Storage = Storage.fill(shape, v)
 			def backward(argument: Tensor, chainGrad: Storage): Storage = 
 				argument.storage match
 					case forward => Storage.ones(forward)
 		}, isGrad)
 
-	def ones(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
-		fill(shape, 1, device, isGrad)	
+	def ones(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
+		fill(shape, 1, isGrad)	
 
-	def zeros(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
-		fill(shape, 0, device, isGrad)
+	def zeros(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
+		fill(shape, 0, isGrad)
 
-	def rand(shape: Seq[Int], device: String = "cpu", isGrad: Boolean = false) =
+	def rand(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
 		val r = Random()
-		fill(shape, r.nextFloat(), device, isGrad)
+		fill(shape, r.nextFloat(), isGrad)
 
 		
 
