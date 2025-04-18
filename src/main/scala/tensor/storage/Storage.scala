@@ -29,6 +29,7 @@ trait Storage:
 
 	def pow(n: Float): Storage
 	
+	def cat(st: Storage, dim: Int = 0): Storage
 
 object Storage:
 	def apply(data: Iterable[Float], shape: Seq[Int], device: String = "cpu") = 
