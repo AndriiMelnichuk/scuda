@@ -163,8 +163,12 @@ class CudaStorage(
 
 
 object CudaStorage:
-	def apply(h_array: Iterable[Float], shape: Seq[Int]) =
-		val pointer = host2device(h_array, shape.product)
+	def apply(storage: Iterable[Float], shape: Seq[Int]) =
+		require(storage.nonEmpty, "ArrayStorage: storage array must not be empty")
+		require(shape != Seq(), "ArrayStorage: shape must not be empty")
+		require(storage.toSeq.length == shape.product, "ArrayStorage: size of the data must correspond to shape")
+		require(shape.map(_ > 0).reduce(_ && _), "ArrayStorage: shape must not contain dim < 0")
+		val pointer = host2device(storage, shape.product)
 		new CudaStorage(pointer, shape)
 	def fill(shape: Seq[Int], value: =>Float): Storage = 
 		val newStorage = Array.fill(shape.product)(value)

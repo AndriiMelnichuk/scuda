@@ -10,6 +10,12 @@ class ArrayStorage(
 	val storage: Array[Float], 
 	val shape: Seq[Int]
 	) extends Storage:
+	
+	require(storage.nonEmpty, "ArrayStorage: storage array must not be empty")
+	require(shape != Seq(), "ArrayStorage: shape must not be empty")
+	require(storage.length == shape.product, "ArrayStorage: size of the data must correspond to shape")
+	require(shape.map(_ > 0).reduce(_ && _), "ArrayStorage: shape must not contain dim < 0")
+
 	override def toString(): String = beautifulArrayprint(storage, shape)
 
 	def +(other: Storage) = elementByElementOperation(_ + _)(other)
