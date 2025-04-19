@@ -119,8 +119,12 @@ class CudaStorage(
 		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsy, gridDimY = gsx, blockDimX = bsy, blockDimY = bsx)
 		new CudaStorage(nStorage, shape.reverse)
 
-	// TODO can be optimized
-	def item = this.toCpu().item
+	def item = 
+		if shape != Seq(1) then 
+			throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
+		val item = Array(0f)
+		cudaMemcpy(Pointer.to(item), storage, Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+		item(0)
 
 	def unary_- = this * -1
 
