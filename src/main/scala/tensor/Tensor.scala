@@ -249,13 +249,7 @@ object Tensor:
 		res
 
 	def fill(shape: Seq[Int], v: =>Float, isGrad: Boolean = false)(using device: String = "cpu") = 
-		new Tensor(new GeneralFunction {
-			lazy val args: Seq[Tensor] = Seq()
-			lazy val forward: Storage = Storage.fill(shape, v)
-			def backward(argument: Tensor, chainGrad: Storage): Storage = 
-				argument.storage match
-					case forward => Storage.ones(forward)
-		}, isGrad)
+		apply(Storage.fill(shape, v), isGrad)
 
 	def ones(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
 		fill(shape, 1, isGrad)	
