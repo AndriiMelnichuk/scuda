@@ -28,7 +28,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val b = other
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a, b)
-			lazy val forward = args(0).storage + args(1).storage
+			lazy val forward = a.storage + b.storage
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a + b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -41,7 +41,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val b = other
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a, b)
-			lazy val forward = args(0).storage - args(1).storage
+			lazy val forward = a.storage - b.storage
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a - b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -55,7 +55,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val b = other
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a, b)
-			lazy val forward = args(0).storage * args(1).storage
+			lazy val forward = a.storage * b.storage
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a * b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -70,7 +70,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val b = other
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a, b)
-			lazy val forward = args(0).storage / args(1).storage
+			lazy val forward = a.storage / b.storage
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a / b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -84,7 +84,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val b = other
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a, b)
-			lazy val forward = args(0).storage ** args(1).storage
+			lazy val forward = a.storage ** b.storage
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a ** b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -198,7 +198,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val a = this
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a)
-			lazy val forward = args(0).storage.sum
+			lazy val forward = storage.sum
 			def backward(arg: Tensor, chainGrad: Storage) = 
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a.sum can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -212,7 +212,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val a = this
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a)
-			lazy val forward = a.storage.T
+			lazy val forward = storage.T
 			def backward(arg: Tensor, chainGrad: Storage) = 
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a.T can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
