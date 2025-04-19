@@ -233,23 +233,20 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		}, hasVar)
 
 object Tensor:
-	def apply(data: Iterable[Float], shape: Seq[Int], isGrad: Boolean = false)(using  device: String = "cpu") = 
-		new Tensor(new GeneralFunction {
-			lazy val args: Seq[Tensor] = Seq()
-			lazy val forward: Storage = Storage(data, shape)
-			def backward(argument: Tensor, chainGrad: Storage): Storage = 
-				argument.storage match
-					case forward => Storage.ones(forward)
-		}, isGrad)
+	def apply(data: Iterable[Float], shape: Seq[Int], isGrad: Boolean = false)(using  device: String = "cpu"): Tensor = 
+		apply(Storage(data, shape), isGrad)
 	
-	def apply(data: Storage, isGrad: Boolean) = 
-		new Tensor(new GeneralFunction {
+	def apply(data: Storage, isGrad: Boolean): Tensor = 
+		lazy val res: Tensor = new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq()
 			lazy val forward: Storage = data
-			def backward(argument: Tensor, chainGrad: Storage): Storage = 
-				argument.storage match
-					case forward => Storage.ones(forward)
+			def backward(arg: Tensor, chainGrad: Storage): Storage = 
+				if forward.shape != chainGrad.shape then 
+					throw new Exception(s"Gradient x can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
+				if arg == res then  Storage.ones(forward) 
+				else                Storage.zeros(arg.storage)
 		}, isGrad)
+		res
 
 	def fill(shape: Seq[Int], v: =>Float, isGrad: Boolean = false)(using device: String = "cpu") = 
 		new Tensor(new GeneralFunction {
