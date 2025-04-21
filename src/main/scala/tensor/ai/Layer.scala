@@ -1,5 +1,7 @@
 package scuda.tensor.ai
 
+import scala.collection.parallel.CollectionConverters._
+
 import scuda.tensor. { Tensor, GeneralFunction }
 import scuda.tensor.storage.Storage
 
@@ -60,7 +62,7 @@ class Sequential(layers: Seq[ReplicatibleFunction]) extends ReplicatibleFunction
 		}
 		res	
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer) =
-		val nSeq = layers.map(l => l.replicate(grad, opt))
+		val nSeq = layers.par.map(l => l.replicate(grad, opt)).seq
 		Sequential(nSeq)
 
 class StableSoftmax() extends ReplicatibleFunction:
