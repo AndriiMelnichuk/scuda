@@ -16,20 +16,23 @@ __global__ void ReLU(int n, float *input, float *output) {
 }
 
 extern "C"
-__global__ void stableSoftmax(int m, int n, float *input, float *output){
+__global__ void stableSoftmax(int m, int n, float *input, float *output) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < m){
-        float maxX = input[i * m];
-        for(int j = 0; j != n; j++)
-            if (input[i * m + j] > maxX)
-                maxX = input[i * m + j];
+    if (i < m) {
+        float maxX = input[i * n];
+        for (int j = 1; j != n; j++)
+            if (input[i * n + j] > maxX)
+                maxX = input[i * n + j];
+        
         float eSum = 0;
-        for(int j = 0; j != n; j++)
-            eSum += expf(input[i * m + j] - maxX);
-        for(int j = 0; j != n; j++)
-            output[i * m + j] = expf(input[i * m + j] - maxX) / eSum; 
+        for (int j = 0; j != n; j++)
+            eSum += expf(input[i * n + j] - maxX);
+        
+        for (int j = 0; j < n; ++j)
+            output[i * n + j] = expf(input[i * n + j] - maxX) / eSum;
     }
 }
+
 
 extern "C"
 __global__ void stableSoftmaxGrad(int m, int n, float *softmax, float *chainGrad, float *result){
