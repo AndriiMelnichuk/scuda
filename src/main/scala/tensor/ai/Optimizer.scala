@@ -7,5 +7,4 @@ type Gradient = Storage
 type Optimizer = (Weight, Gradient) => Storage
 
 def SGD(tau: Float): Optimizer =
-    // TODO grad must be -grad. I must find problem of -grad.
-    (w0, grad) => grad * tau + w0
+    (w0, grad) => -grad * tau + w0

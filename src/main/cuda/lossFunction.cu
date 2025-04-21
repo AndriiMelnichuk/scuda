@@ -16,6 +16,6 @@ __global__ void crossEntropyLossGrad(int m, int n, float *input, float *target, 
         for(int j=0; j!=n; j++)
             output[i * n + j] = 0;
         int j = (int)target[i];
-        output[i * n + j] = chainGrad[i] / input[i * n + j];
+        output[i * n + j] = -chainGrad[i] / input[i * n + j];
     }
 }
