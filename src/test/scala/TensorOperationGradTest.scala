@@ -10,12 +10,12 @@ class TensorOperationGradTest extends AnyFunSuite:
 		val sy = b.toCpu().storage
 		val d = 0.0001
 		(0 until sx.length)
-		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _)
+		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _) &&  a.shape == b.shape
  
 	/* 
 	*	CPU/CUDA TEST 
 	*/
-	implicit val dhost: String = "cuda"
+	implicit val dhost: String = "cpu"
 
 	test("x + y: gradient for x, y must be chainGrad, else zeros"){
 		val s1 = 0 until 9 map (_.toFloat)

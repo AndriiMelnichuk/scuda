@@ -1,12 +1,7 @@
 import org.scalatest.funsuite.AnyFunSuite
 import scuda.tensor.Tensor
-import scuda.tensor.cpu.ArrayStorage
-import scuda.tensor.cuda.CudaStorage
 import scuda.tensor.storage.Storage
-import scuda.tensor.ai.ForwardLayer
-import scuda.tensor.ai.ReLU
-import scuda.tensor.ai.Sequential
-import scuda.tensor.ai.StableSoftmax
+import scuda.tensor.ai.*
 
 class LayerResultTest extends AnyFunSuite:
 	val d= 0.001
@@ -14,18 +9,18 @@ class LayerResultTest extends AnyFunSuite:
 		val st1 = a.storage.toCpu().storage
 		val st2 = b.storage.toCpu().storage
 		(0 until st1.length)
-		.map(i => math.abs(st1(i) - st2(i)) < d).reduce(_ && _)
+		.map(i => math.abs(st1(i) - st2(i)) < d).reduce(_ && _) &&  a.storage.shape == b.storage.shape
     
 	def storageEqual(a: Storage, b: Storage): Boolean = 
 		val sx = a.toCpu().storage
 		val sy = b.toCpu().storage
 		(0 until sx.length)
-		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _)
+		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _) &&  a.shape == b.shape
 
 	/* 
 	*	CPU/CUDA TEST 
 	*/
-	implicit val dhost: String = "cuda"
+	implicit val dhost: String = "cpu"
 
 	test("Forward layer computation correct"){
 		val w_d = Seq(-0.4100f, -0.0681f,  0.0581f,  0.0486f, 
