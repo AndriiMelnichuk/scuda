@@ -115,7 +115,6 @@ class CudaStorage(
 		val gsx = (m + mBlockSize - 1) / mBlockSize
 		val bsy = if mBlockSize > n then n else mBlockSize
 		val gsy = (n + mBlockSize - 1) / mBlockSize
-		println(s"bsx: $bsx, gsx: $gsx, bsy: $bsy, gsy: $gsy")
 		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsy, gridDimY = gsx, blockDimX = bsy, blockDimY = bsx)
 		new CudaStorage(nStorage, shape.reverse)
 
