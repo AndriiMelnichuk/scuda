@@ -1,6 +1,5 @@
 package scuda.tensor.cpu
 
-import scala.math.{ log, exp}
 import scala.collection.parallel.CollectionConverters._
 import scuda.tensor.storage.Storage
 
@@ -24,7 +23,7 @@ def crossEntropyLoss(pr: ArrayStorage, target: ArrayStorage): ArrayStorage =
   val intTarget = target.storage map (x => x.toInt)
   val res = (0 until m).par
     .map(x => x * n + intTarget(x))
-    .map(x => -log(pr.storage(x)).toFloat)
+    .map(x => -math.log(pr.storage(x)).toFloat)
     .toArray
   new ArrayStorage(res, target.shape)
 
@@ -44,7 +43,7 @@ def stableSoftmax(x: ArrayStorage): ArrayStorage =
 
   val st = x.storage
   val max = (st grouped n map (x => x.max)).toList
-  val ste = (0 until m * n).par.map(i => exp(st(i) - max(i / n)).toFloat).toArray
+  val ste = (0 until m * n).par.map(i => math.exp(st(i) - max(i / n)).toFloat).toArray
   // val ste = st.par.map(x => exp(x).toFloat).toArray
   val sums = (ste grouped n).map(_.sum).toArray
 
