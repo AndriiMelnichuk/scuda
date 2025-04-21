@@ -136,6 +136,20 @@ def relu(x: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
   cernelExecute("src/main/resources/activationFunction.ptx", "ReLU", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
   new CudaStorage(nStorage, x.shape)
 
+def reluGrad(x: CudaStorage, cg: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
+  val nStorage = Pointer()
+  cudaMalloc(nStorage, Sizeof.FLOAT * x.shape.product)
+  val kernelParams = Pointer.to(
+    Pointer.to(Array(x.shape.product)),
+    Pointer.to(x.storage),
+    Pointer.to(cg.storage),
+    Pointer.to(nStorage)
+  )
+  val blockSize = if (mBlockSize > x.shape.product) x.shape.product else mBlockSize
+  val gridSize = (x.shape.product + mBlockSize - 1) / mBlockSize
+  cernelExecute("src/main/resources/activationFunction.ptx", "ReLUGrad", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
+  new CudaStorage(nStorage, x.shape)
+
 def crossEntropyLoss(pr: CudaStorage, target: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
   // TODO exception
   val nStorage = Pointer()

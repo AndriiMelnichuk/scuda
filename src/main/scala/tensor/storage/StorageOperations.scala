@@ -5,6 +5,7 @@ import scuda.tensor.cpu.*
 import scuda.tensor.cuda.CudaStorage
 import scuda.tensor.cpu.ArrayStorage
 
+// TODO require for functions
 def relu(x: Storage): Storage = x match
     case x: CudaStorage   => scuda.tensor.cuda.relu(x)
     case x: ArrayStorage  => scuda.tensor.cpu.relu(x)
@@ -12,7 +13,7 @@ def relu(x: Storage): Storage = x match
 
 def reluGrad(pr: Storage, cg: Storage): Storage = (pr, cg) match
     case (x: ArrayStorage, y: ArrayStorage) => scuda.tensor.cpu.reluGrad(x, y)
-    case (x: CudaStorage, y: CudaStorage)   => ???
+    case (x: CudaStorage, y: CudaStorage)   => scuda.tensor.cuda.reluGrad(x, y)
     case _                                  => throw new IllegalArgumentException("Mismatched or unsupported storage types for reluGrad")
 
 def crossEntropyLoss(pr: Storage, target: Storage): Storage = (pr, target) match

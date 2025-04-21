@@ -16,6 +16,16 @@ __global__ void ReLU(int n, float *input, float *output) {
 }
 
 extern "C"
+__global__ void ReLUGrad(int n, float *input, float *chainGrad, float *output) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) 
+        if (input[i] > 0)
+            output[i] = chainGrad[i];
+        else
+            output[i] = 0;
+}
+
+extern "C"
 __global__ void stableSoftmax(int m, int n, float *input, float *output) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < m) {
