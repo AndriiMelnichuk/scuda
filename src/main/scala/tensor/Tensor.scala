@@ -16,6 +16,7 @@ import scala.collection.parallel.CollectionConverters._
 import scala.util.Random
 import storage.Storage
 
+// TODO cat
 // hasVar - is variable is in graph
 // hasVar + origin.isEmpty => variable wich will have gradient
 case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):

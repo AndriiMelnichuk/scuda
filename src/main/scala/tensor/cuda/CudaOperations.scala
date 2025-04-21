@@ -151,7 +151,6 @@ def reluGrad(x: CudaStorage, cg: CudaStorage, mBlockSize: Int = 1024): CudaStora
   new CudaStorage(nStorage, x.shape)
 
 def crossEntropyLoss(pr: CudaStorage, target: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
-  // TODO exception
   val nStorage = Pointer()
   cudaMalloc(nStorage, Sizeof.FLOAT * target.shape.product)
   

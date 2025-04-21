@@ -11,7 +11,6 @@ def reluGrad(x: ArrayStorage, cg: ArrayStorage) =
   val res = ArrayStorage(x.storage.map(x => if x > 0 then 1f else 0f), x.shape)
   res * cg
 
-
 /**
   * 
   *

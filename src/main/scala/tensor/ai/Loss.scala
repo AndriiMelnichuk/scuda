@@ -7,7 +7,6 @@ import scuda.tensor.storage.crossEntropyLossGrad
 
 type Loss = (Tensor, Tensor) => Tensor
 
-// TODO need tests
 def crossEntropyLoss(prediction: Tensor, target: Tensor): Tensor =
 
   val res = new Tensor(new GeneralFunction {
@@ -17,7 +16,3 @@ def crossEntropyLoss(prediction: Tensor, target: Tensor): Tensor =
       crossEntropyLossGrad(prediction.storage, target.storage, chainGrad)
   }, prediction.hasVar)
   res.sum / res.storage.shape(0)
-
-def crossEntropyLogitsLoss(logits: Tensor, target: Tensor): Tensor = 
-  ???    
-    

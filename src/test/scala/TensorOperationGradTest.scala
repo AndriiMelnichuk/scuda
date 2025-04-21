@@ -378,6 +378,5 @@ class TensorOperationGradTest extends AnyFunSuite:
 		assert(storageEqual(g2, Storage.zeros(y.storage)))
 		assert(storageEqual(g3, Storage.zeros(t3.storage)))
 	}
-	// TODO test logic of tensor if isVar = false
 	
 
