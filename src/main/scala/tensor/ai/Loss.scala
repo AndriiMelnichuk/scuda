@@ -5,8 +5,6 @@ import scuda.tensor.GeneralFunction
 import scuda.tensor.storage.Storage
 import scuda.tensor.storage.crossEntropyLossGrad
 
-type Loss = (Tensor, Tensor) => Tensor
-
 def crossEntropyLoss(prediction: Tensor, target: Tensor): Tensor =
 
   val res = new Tensor(new GeneralFunction {
@@ -16,3 +14,6 @@ def crossEntropyLoss(prediction: Tensor, target: Tensor): Tensor =
       crossEntropyLossGrad(prediction.storage, target.storage, chainGrad)
   }, prediction.hasVar)
   res.sum / res.storage.shape(0)
+
+def MSE(prediction: Tensor, target: Tensor): Tensor =
+  ((prediction - target).pow(2)).sum / prediction.storage.shape.product

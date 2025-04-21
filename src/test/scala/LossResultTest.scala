@@ -37,5 +37,13 @@ class LossResTest extends AnyFunSuite:
 		assert(tensorEqual(tres, res))
 	}
 
+	test("mse loss result corect"){
+		val x = Tensor(Seq[Float](1, 2, 3, 4, 5, 6), Seq(2, 3), true)
+		val y = Tensor(Seq[Float](7, 9, 8, 1, 3, 5), Seq(2, 3))
 
+		val res = MSE(x, y)
+		val tres = Tensor(Seq(20.6666f), Seq(1))
+		assert(tensorEqual(res, tres))
+
+	}
 

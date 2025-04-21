@@ -40,3 +40,18 @@ class LossGradTest extends AnyFunSuite:
 
 		assert(storageEqual(g, tg))
 	}
+
+	test("mse loss grad corect"){
+		val x = Tensor(Seq[Float](1, 2, 3, 4, 5, 6), Seq(2, 3), true)
+		val y = Tensor(Seq[Float](7, 9, 8, 1, 3, 5), Seq(2, 3), true)
+
+		val res = MSE(x, y)
+		val grad = gradientSearch(res)
+		val x_g = grad(x)
+		val y_g = grad(y)
+
+		val x_tg = Storage(Seq[Float](-2.0000, -2.3333, -1.6666, 1.0000, 0.6666, 0.3333), Seq(2, 3))
+		val y_tg = Storage(Seq[Float](2.0000, 2.3333, 1.6666, -1.0000, -0.6666, -0.3333), Seq(2, 3))
+		assert(storageEqual(x_g, x_tg))
+		assert(storageEqual(y_g, y_tg))
+	}
