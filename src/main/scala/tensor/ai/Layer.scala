@@ -31,6 +31,8 @@ class ForwardLayer(val w: Tensor, val b: Tensor) extends ReplicatibleFunction:
 
 object ForwardLayer:
 	def apply(inFeatures: Int, outFeatures: Int)(using device: String = "cpu") =
+		require(inFeatures > 0, "ForwardLayer: in features must be > 0")
+		require(outFeatures > 0, "ForwardLayer: out features must be > 0")
 		val rand = scala.util.Random()
 		val ub = scala.math.sqrt(6.0 / (inFeatures + outFeatures)).toFloat
 		val lb = - ub
