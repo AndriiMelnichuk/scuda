@@ -114,3 +114,21 @@ class LayerResultTest extends AnyFunSuite:
 		val res = layer(x)
 		assert(tensorEqual(y, res))
 	}
+
+	test("Sigmoid layer computation correct"){
+    val x = Tensor(Seq[Float](1, -5, 0, 9, 8, -3.5), Seq(3,2))
+    val y = Tensor(Seq[Float](0.7311f, 0.0067f, 0.5000f, 0.9999f, 0.9997f, 0.0292f), Seq(3, 2))
+    val layer = Sigmoid()
+    val res = layer(x)
+
+    assert(tensorEqual(res, y))
+  }
+
+	test("Tanh layer computation correct"){
+    val x = Tensor(Seq[Float](1, -5, 0, 9, 8, -3.5), Seq(3,2))
+    val y = Tensor(Seq[Float](0.7616f, -1f, 0f, 1f, 1f, -0.9982f), Seq(3, 2))
+    val layer = Tanh()
+    val res = layer(x)
+
+    assert(tensorEqual(res, y))
+  }
