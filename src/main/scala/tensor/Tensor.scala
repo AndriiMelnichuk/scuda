@@ -205,8 +205,6 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 					throw new Exception(s"Gradient a.sum can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
 				if a == arg then  Storage.fill(a.storage, chainGrad.item)
 				else              Storage.zeros(arg.storage)
-				
-
 		}, hasVar)
 
 	def T: Tensor =
@@ -231,6 +229,18 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a.historyDrop can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
 				Storage.zeros(arg.storage)
+		}, hasVar)
+
+	def flatten(from: Int = 0, to: Int = storage.shape.length) =
+		val a = this
+		new Tensor(new GeneralFunction {
+			lazy val args: Seq[Tensor] = Seq(a)
+			lazy val forward = storage.flatten(from, to)
+			def backward(arg: Tensor, chainGrad: Storage) = 
+				if forward.shape != chainGrad.shape then 
+					throw new Exception(s"Gradient a.flatten can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
+				if a == arg then  chainGrad.reshape(a.storage.shape)
+				else              Storage.zeros(arg.storage)
 		}, hasVar)
 
 object Tensor:

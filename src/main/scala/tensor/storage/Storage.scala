@@ -31,6 +31,13 @@ trait Storage:
 	def reshape(seq: Int*): Storage = 
 		reshape(seq.toIterable)
 	def reshape(seq: Iterable[Int]): Storage
+	def flatten(from: Int = 0, to: Int = shape.length) =
+		require(from >= 0)
+		require(from < to)
+		val prod = shape.slice(from, to + 1).product
+		val nshape = shape.take(from) ++ Seq(prod) ++ shape.drop(to)
+		reshape(nshape)
+
 	
 	def cat(st: Storage, dim: Int = 0): Storage
 
