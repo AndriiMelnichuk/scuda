@@ -18,45 +18,27 @@ class CudaStorage(
 	val shape: Seq[Int], 
 ) extends Storage:
 	
-	override def toString(): String = beautifulArrayprint(device2host(storage, shape), shape)
-
-	override def finalize() = cudaFree(storage)
-
-	private val elementwiseCernelPath = "src/main/resources/tesorElementwiseOperatins.ptx"
-	
 	def elementwiseOperation(other: Storage, ptxFile: String, opName: String): Storage = 
 		if this.shape != other.shape then throw new Exception("Operation cannot be performed if shape of Tensors isn't equal.")
 		other match
 				case other: CudaStorage => elementwiseCernelExecuter(this, other, ptxFile, opName)
 				case _ => throw new Exception("Operation cannot be performed if devise isn't same.")
-
 	def elementwiseScalarOperation(other: Float, ptxFile: String, opName: String): Storage = 
 		elementwiseScalarCernelExecuter(this, other, ptxFile, opName)
 
+	override def toString(): String = beautifulArrayprint(device2host(storage, shape), shape)
+	override def finalize() = cudaFree(storage)
+
+	private val elementwiseCernelPath = "src/main/resources/tesorElementwiseOperatins.ptx"
+
 	def +(other: Storage) =
 		elementwiseOperation(other, elementwiseCernelPath, "tensorAddition")
-	
 	def -(other: Storage): Storage = 
 		elementwiseOperation(other, elementwiseCernelPath, "tensorSubtraction")
-	
 	def *(other: Storage): Storage = 
 		elementwiseOperation(other, elementwiseCernelPath, "tensorMultiplication")
-
 	def /(other: Storage): Storage = 
 		elementwiseOperation(other, elementwiseCernelPath, "tensorDivision")
-
-	def +(alpha: Float): Storage = 
-		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSAddition")
-	def -(alpha: Float): Storage = 
-		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSSubtraction")
-
-	def *(alpha: Float): Storage = 
-		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSMultiplication")
-
-
-	def /(alpha: Float): Storage = 
-		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSDivision")
-			
 	def **(other: Storage): Storage = 
 		if this.shape.length != 2 || other.shape.length != 2 then 
 			throw new Exception("Operation cannot be performed if shape of Tensors isn't equal 2.")
@@ -85,19 +67,37 @@ class CudaStorage(
 			case _ => 
 				throw new Exception("Operation cannot be performed if devise isn't same.")
 
+	def +(alpha: Float): Storage = 
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSAddition")
+	def -(alpha: Float): Storage = 
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSSubtraction")
+	def *(alpha: Float): Storage = 
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSMultiplication")
+	def /(alpha: Float): Storage = 
+		elementwiseScalarOperation(alpha, elementwiseCernelPath, "tensorSDivision")
+	def pow(n: Float): Storage = 
+		elementwiseScalarOperation(n, elementwiseCernelPath, "tensorPow")
+	def unary_- = this * -1
 
-	def toCpu(): ArrayStorage = new ArrayStorage(device2host(storage, shape), shape)
-
-	def toCuda(): CudaStorage = 
+	// device change
+	def toCpu: ArrayStorage = new ArrayStorage(device2host(storage, shape), shape)
+	def toCuda: CudaStorage = 
 		val res = Pointer()
 		cudaMalloc(res, shape.product * Sizeof.FLOAT)
 		cudaMemcpy(res, storage, shape.product * Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToDevice)
 		new CudaStorage(res, shape)
 
+	// reduce
 	def sum: CudaStorage = 
 		// TODO: realization with CUDA power
-		this.toCpu().sum.toCuda()
-		
+		this.toCpu.sum.toCuda
+	def item = 
+		if shape != Seq(1) then 
+			throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
+		val item = Array(0f)
+		cudaMemcpy(Pointer.to(item), storage, Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+		item(0)
+
 	def T: Storage = 
 		if shape.length != 2 then throw new Exception("not 2d Tensor cant be transponed")
 		val mBlockSize = 1024
@@ -118,17 +118,11 @@ class CudaStorage(
 		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsy, gridDimY = gsx, blockDimX = bsy, blockDimY = bsx)
 		new CudaStorage(nStorage, shape.reverse)
 
-	def item = 
-		if shape != Seq(1) then 
-			throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
-		val item = Array(0f)
-		cudaMemcpy(Pointer.to(item), storage, Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
-		item(0)
-
-	def unary_- = this * -1
-
-	def pow(n: Float): Storage = 
-		elementwiseScalarOperation(n, elementwiseCernelPath, "tensorPow")
+	def reshape(seq: Iterable[Int]): Storage = 
+		require(seq != Seq(), "CudaStorage: shape must not be empty")
+		require(seq.product == shape.product, "CudaStorage: size of the data must correspond to shape")
+		require(seq.map(_ > 0).reduce(_ && _), "CudaStorage: shape must not contain dim < 0")
+		new CudaStorage(storage, seq.toSeq)
 
 	def cat(st: Storage, dim: Int = 0) = 
 		val mBlockSize = 1024
@@ -163,10 +157,10 @@ class CudaStorage(
 
 object CudaStorage:
 	def apply(storage: Iterable[Float], shape: Seq[Int]) =
-		require(storage.nonEmpty, "ArrayStorage: storage array must not be empty")
-		require(shape != Seq(), "ArrayStorage: shape must not be empty")
-		require(storage.toSeq.length == shape.product, "ArrayStorage: size of the data must correspond to shape")
-		require(shape.map(_ > 0).reduce(_ && _), "ArrayStorage: shape must not contain dim < 0")
+		require(storage.nonEmpty, "CudaStorage: storage array must not be empty")
+		require(shape != Seq(), "CudaStorage: shape must not be empty")
+		require(storage.toSeq.length == shape.product, "CudaStorage: size of the data must correspond to shape")
+		require(shape.map(_ > 0).reduce(_ && _), "CudaStorage: shape must not contain dim < 0")
 		val pointer = host2device(storage, shape.product)
 		new CudaStorage(pointer, shape)
 	def fill(shape: Seq[Int], value: =>Float): Storage = 

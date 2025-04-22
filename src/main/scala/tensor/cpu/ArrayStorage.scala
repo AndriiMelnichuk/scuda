@@ -11,29 +11,24 @@ class ArrayStorage(
 	val shape: Seq[Int]
 	) extends Storage:
 	
+
 	require(storage.nonEmpty, "ArrayStorage: storage array must not be empty")
 	require(shape != Seq(), "ArrayStorage: shape must not be empty")
 	require(storage.length == shape.product, "ArrayStorage: size of the data must correspond to shape")
 	require(shape.map(_ > 0).reduce(_ && _), "ArrayStorage: shape must not contain dim < 0")
 
+	def elementByElementOperation(operation: (Float, Float) => Float)(other: Storage): Storage = 
+		if this.shape != other.shape then throw new Exception("Operation cannot be performed if shape of Tensors isn't equal.")
+		other match
+			case other: ArrayStorage => ArrayStorage(storage.zip(other.storage).map(operation(_,_)), shape)
+			case _ => throw new Exception("Operation cannot be performed if devise isn't same.")
+	
 	override def toString(): String = beautifulArrayprint(storage, shape)
 
 	def +(other: Storage) = elementByElementOperation(_ + _)(other)
-	
 	def -(other: Storage) = elementByElementOperation(_ - _)(other)
-	
 	def *(other: Storage) = elementByElementOperation(_ * _)(other)
-	
 	def /(other: Storage) = elementByElementOperation(_ / _)(other)
-
-	def +(alpha: Float) = new ArrayStorage(storage.map(_ + alpha), shape)
-
-	def -(alpha: Float) = new ArrayStorage(storage.map(_ - alpha), shape)
-
-	def *(alpha: Float): Storage = new ArrayStorage(storage.map(_ * alpha), shape)
-
-	def /(alpha: Float): Storage = new ArrayStorage(storage.map(_ / alpha), shape)    
-
 	def **(other: Storage): Storage = 
 		if this.shape.length != 2 || other.shape.length != 2 then throw new Exception("Operation cannot be performed if shape of Tensors isn't equal 2.")
 		if this.shape(1) != other.shape(0) then throw new Exception("Operation cannot be performed if Tensor A.shape(1) != Tensor B.shape(0)")
@@ -54,15 +49,23 @@ class ArrayStorage(
 				ArrayStorage(nStorage.toArray, Seq(m, n))
 			case _  => throw new Exception("Operation cannot be performed if devise isn't same.")
 
-	def elementByElementOperation(operation: (Float, Float) => Float)(other: Storage): Storage = 
-		if this.shape != other.shape then throw new Exception("Operation cannot be performed if shape of Tensors isn't equal.")
-		other match
-			case other: ArrayStorage => ArrayStorage(storage.zip(other.storage).map(operation(_,_)), shape)
-			case _ => throw new Exception("Operation cannot be performed if devise isn't same.")
-	
-	def toCpu(): ArrayStorage = new ArrayStorage(storage.clone(), shape)
+	def +(alpha: Float) = new ArrayStorage(storage.map(_ + alpha), shape)
+	def -(alpha: Float) = new ArrayStorage(storage.map(_ - alpha), shape)
+	def *(alpha: Float): Storage = new ArrayStorage(storage.map(_ * alpha), shape)
+	def /(alpha: Float): Storage = new ArrayStorage(storage.map(_ / alpha), shape)    
+	def pow(n: Float) =
+		new ArrayStorage(storage.par.map(x => math.pow(x.toDouble,n).toFloat).toArray, shape)
+	def unary_- = new ArrayStorage(storage.map(-_), shape)
 
-	def toCuda(): CudaStorage = new CudaStorage(host2device(storage, shape.product), shape)
+	// device change
+	def toCpu: ArrayStorage = new ArrayStorage(storage.clone(), shape)
+	def toCuda: CudaStorage = new CudaStorage(host2device(storage, shape.product), shape)
+
+	// reduce
+	def sum: Storage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq(1))
+	def item: Float = 
+		if shape == Seq(1) then storage(0)
+		else throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
 
 	def T: Storage = 
 		if shape.length != 2 then throw new Exception("not 2d Tensor cant be transponed")
@@ -74,16 +77,8 @@ class ArrayStorage(
 
 		ArrayStorage(newStorage.toArray, shape.reverse)
 
-	def sum: Storage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq(1))
-
-	def item: Float = 
-		if shape == Seq(1) then storage(0)
-		else throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
-
-	def unary_- = new ArrayStorage(storage.map(-_), shape)
-
-	def pow(n: Float) =
-		new ArrayStorage(storage.par.map(x => math.pow(x.toDouble,n).toFloat).toArray, shape)
+	def reshape(seq: Iterable[Int]): Storage = 
+		ArrayStorage(storage, seq.toSeq)
 
 	// TODO index selection
 	def apply(args: Int | Iterable[Int]*) =
@@ -119,6 +114,7 @@ class ArrayStorage(
 
 				ArrayStorage(res, shape.updated(dim, shape(dim) + st.shape(dim)))
 			case _ => throw new Exception("Can't cat not same type storages")
+
 
 object ArrayStorage:
 	def apply(data: Iterable[Float], shape: Seq[Int]): ArrayStorage = 

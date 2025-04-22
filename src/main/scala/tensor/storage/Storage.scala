@@ -16,18 +16,21 @@ trait Storage:
 	def -(alpha: Float): Storage
 	def *(alpha: Float): Storage
 	def /(alpha: Float): Storage
-
-	def T: Storage
-	def toCpu(): ArrayStorage
-	def toCuda(): CudaStorage
-
-	def sum: Storage
-
-	def item: Float
-
+	def pow(n: Float): Storage
 	def unary_- : Storage
 
-	def pow(n: Float): Storage
+	// device change
+	def toCpu: ArrayStorage
+	def toCuda: CudaStorage
+
+	// reduce
+	def sum: Storage
+	def item: Float
+
+	def T: Storage
+	def reshape(seq: Int*): Storage = 
+		reshape(seq.toIterable)
+	def reshape(seq: Iterable[Int]): Storage
 	
 	def cat(st: Storage, dim: Int = 0): Storage
 
