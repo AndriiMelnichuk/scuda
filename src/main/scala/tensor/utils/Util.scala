@@ -64,3 +64,31 @@ def readCsv(path: String, isHeader: Boolean = false, splitSign: String = ",", is
 
 	Tensor(data.flatten.map(_.toFloat).toArray, Seq(m, n), isGrad)
 
+def readImg(path: String, isGrad: Boolean = false)(using device: String = "cpu") =
+	import java.io.File
+	import javax.imageio.ImageIO
+	import java.awt.image.BufferedImage
+
+	val img: BufferedImage = ImageIO.read(new File(path))
+
+	val w = img.getWidth
+	val h = img.getHeight
+	val imgArray = Array.ofDim[Float](w * h * 3)
+
+	(0 until w * h)
+	.par
+	.foreach{ i =>
+		val x = i % w
+		val y = i / w
+
+		val rgb = img.getRGB(x, y)
+		val r = (rgb >> 16) & 0xFF
+		val g = (rgb >> 8) & 0xFF
+		val b = rgb & 0xFF	
+
+		imgArray(i)             = r
+		imgArray(i + w * h)     = g
+		imgArray(i + w * h * 2) = b
+	}
+
+	Tensor(imgArray, Seq(3, h, w), isGrad) / 255
