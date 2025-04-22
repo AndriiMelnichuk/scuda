@@ -20,10 +20,10 @@ class LayerGradTest extends AnyFunSuite:
 	/* 
 	*	CPU/CUDA TEST 
 	*/
-	implicit val dhost: String = "cpu"
+	implicit val dhost: String = "cuda"
 
 
-	test("Forward layer computation correct"){
+	test("Forward layer gradient correct"){
 		// Forward init
 		val w_d = Seq(-0.4100f, -0.0681f,  0.0581f,  0.0486f, 
 									-0.1011f, -0.2201f,  0.0224f,  0.3765f)
@@ -68,7 +68,7 @@ class LayerGradTest extends AnyFunSuite:
 
 	}
 
-	test("ReLU layer computation correct"){
+	test("ReLU layer gradient correct"){
 		val x = Tensor(Seq[Float](1, -5, 0, 9, 8, -3.5), Seq(3,2), true)
 		val layer = ReLU()
 		val res = layer(x)
@@ -82,11 +82,10 @@ class LayerGradTest extends AnyFunSuite:
 			Seq(3, 2)
 		)
 
-
 		assert(storageEqual(x_tg, x_g))
 	}
 
-	test("Sequetial layer computation correct"){
+	test("Sequetial layer gradient correct"){
 		// ===== FC1 =====
 		val fc1_w_d = Seq(
 			0.4630f, -0.3816f,  0.0642f, -0.4721f,
@@ -182,13 +181,36 @@ class LayerGradTest extends AnyFunSuite:
 		assert(storageEqual(fc2_b_tg, grad(fc2_b)))
 	}
 
-	test("StableSoftmax layer computation correct"){
+	test("StableSoftmax layer gradient correct"){
 		val x = Tensor(Seq[Float](1f, 2f, 3f, 8f, 7f, 10f), Seq(2, 3), true)
 		val y = Tensor(Seq(0f, 1f, 0f, 1f, 0f, 0.8f), Seq(2, 3))
 		val tg = Storage(Seq[Float](-0.0220f,  0.1848f, -0.1628f, 0.0241f, -0.0332f,  0.0091f), Seq(2, 3))
 
 		val layer = StableSoftmax()
 		val loss = (layer(x) * y).sum
+		val grad = gradientSearch(loss)
+		val g = grad(x)
+		assert(storageEqual(tg, g))
+	}
+
+	test("Sigmoid layer gradient correct"){
+		val x = Tensor(Seq[Float](1f, 2f, 3f, 8f, 7f, 10f), Seq(2, 3), true)
+		val y = Tensor(Seq(0f, 1f, 0f, 1f, 0f, 0.8f), Seq(2, 3))
+		val tg = Storage(Seq[Float](0.0, 0.10499362647533417, 0.0, 0.00033522327430546284, 0.0, 3.633334199548699e-05), Seq(2, 3))
+
+		val layer = Sigmoid()
+		val loss = (layer(x) * y).sum
+		val grad = gradientSearch(loss)
+		val g = grad(x)
+		assert(storageEqual(tg, g))
+	}
+
+	test("Tanh layer gradient correct"){
+		val x = Tensor(Seq[Float](0, 1, -1, 2, -2, 0), Seq(2, 3), true)
+		val tg = Storage(Seq[Float](1.0000, 0.4200, 0.4200, 0.0707, 0.0707, 1.0000), Seq(2, 3))
+
+		val layer = Tanh()
+		val loss = layer(x).sum
 		val grad = gradientSearch(loss)
 		val g = grad(x)
 		assert(storageEqual(tg, g))

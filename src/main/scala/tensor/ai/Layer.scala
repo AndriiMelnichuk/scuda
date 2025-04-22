@@ -54,6 +54,28 @@ class ReLU() extends ReplicatibleFunction:
 
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction = ReLU()
 
+class Sigmoid() extends ReplicatibleFunction:
+  def apply(x: Tensor): Tensor = 
+    new Tensor(new GeneralFunction {
+        lazy val args: Seq[Tensor] = Seq(x)
+        lazy val forward = scuda.tensor.storage.sigmoid(x.storage)
+        def backward(arg: Tensor, chainGrad: Storage) = 
+          scuda.tensor.storage.sigmoidGrad(forward, chainGrad)
+      }, x.hasVar)
+
+  def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction = Sigmoid()
+
+class Tanh() extends ReplicatibleFunction:
+  def apply(x: Tensor): Tensor = 
+    new Tensor(new GeneralFunction {
+        lazy val args: Seq[Tensor] = Seq(x)
+        lazy val forward = scuda.tensor.storage.tanh(x.storage)
+        def backward(arg: Tensor, chainGrad: Storage) = 
+          scuda.tensor.storage.tanhGrad(forward, chainGrad)
+      }, x.hasVar)
+
+  def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction = Tanh()
+
 class Sequential(layers: Seq[ReplicatibleFunction]) extends ReplicatibleFunction:
 	def apply(x: Tensor): Tensor = 
 		var res = x

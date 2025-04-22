@@ -8,6 +8,13 @@ __global__ void sigmoid(int n, float *input, float *output) {
 }
 
 extern "C"
+__global__ void tanhaf(int n, float *input, float *output) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) {
+        output[i] = tanhf(input[i]);
+    }
+}
+extern "C"
 __global__ void ReLU(int n, float *input, float *output) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < n) {

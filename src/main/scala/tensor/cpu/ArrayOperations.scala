@@ -10,6 +10,14 @@ def reluGrad(x: ArrayStorage, cg: ArrayStorage) =
   val res = ArrayStorage(x.storage.map(x => if x > 0 then 1f else 0f), x.shape)
   res * cg
 
+def sigmoid(x: ArrayStorage): ArrayStorage =
+  val res = x.storage.par.map(x => 1f / (1f + math.exp(-x).toFloat))
+  ArrayStorage(res.toArray, x.shape)
+
+def tanh(x: ArrayStorage): ArrayStorage =
+  val res = x.storage.par.map(x => math.tanh(x).toFloat)
+  ArrayStorage(res.toArray, x.shape)
+
 /**
   * 
   *
@@ -44,7 +52,6 @@ def stableSoftmax(x: ArrayStorage): ArrayStorage =
   val st = x.storage
   val max = (st grouped n map (x => x.max)).toList
   val ste = (0 until m * n).par.map(i => math.exp(st(i) - max(i / n)).toFloat).toArray
-  // val ste = st.par.map(x => exp(x).toFloat).toArray
   val sums = (ste grouped n).map(_.sum).toArray
 
   val res = (0 until m * n ).par.map(i => ste(i) / sums(i / n)).toArray

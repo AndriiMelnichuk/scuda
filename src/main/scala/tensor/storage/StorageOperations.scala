@@ -16,6 +16,22 @@ def reluGrad(pr: Storage, cg: Storage): Storage = (pr, cg) match
     case (x: CudaStorage, y: CudaStorage)   => scuda.tensor.cuda.reluGrad(x, y)
     case _                                  => throw new IllegalArgumentException("Mismatched or unsupported storage types for reluGrad")
 
+def sigmoid(x: Storage): Storage = x match
+    case x: ArrayStorage => scuda.tensor.cpu.sigmoid(x)
+    case x: CudaStorage  => scuda.tensor.cuda.sigmoid(x)
+    case _               => throw new IllegalArgumentException("Mismatched or unsupported storage types for sigmoid")
+
+def sigmoidGrad(sigmoid: Storage, chainGrad: Storage): Storage =
+  (sigmoid - (sigmoid pow 2f)) * chainGrad
+
+def tanh(x: Storage): Storage = x match
+    case x: ArrayStorage => scuda.tensor.cpu.tanh(x)
+    case x: CudaStorage  => scuda.tensor.cuda.tanh(x)
+    case _               => throw new IllegalArgumentException("Mismatched or unsupported storage types for tanh")
+
+def tanhGrad(tanh: Storage, chainGrad: Storage): Storage =
+  (-(tanh pow 2f) + 1f) * chainGrad
+
 def crossEntropyLoss(pr: Storage, target: Storage): Storage = (pr, target) match
     case (x: ArrayStorage, y: ArrayStorage) => scuda.tensor.cpu.crossEntropyLoss(x, y)
     case (x: CudaStorage, y: CudaStorage)   => scuda.tensor.cuda.crossEntropyLoss(x, y)

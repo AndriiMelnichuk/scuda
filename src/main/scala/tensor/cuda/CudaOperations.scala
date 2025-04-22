@@ -150,6 +150,32 @@ def reluGrad(x: CudaStorage, cg: CudaStorage, mBlockSize: Int = 1024): CudaStora
   cernelExecute("src/main/resources/activationFunction.ptx", "ReLUGrad", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
   new CudaStorage(nStorage, x.shape)
 
+def sigmoid(x: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
+  val nStorage = Pointer()
+  cudaMalloc(nStorage, Sizeof.FLOAT * x.shape.product)
+  val kernelParams = Pointer.to(
+    Pointer.to(Array(x.shape.product)),
+    Pointer.to(x.storage),
+    Pointer.to(nStorage)
+  )
+  val blockSize = if (mBlockSize > x.shape.product) x.shape.product else mBlockSize
+  val gridSize = (x.shape.product + mBlockSize - 1) / mBlockSize
+  cernelExecute("src/main/resources/activationFunction.ptx", "sigmoid", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
+  new CudaStorage(nStorage, x.shape)
+
+def tanh(x: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
+  val nStorage = Pointer()
+  cudaMalloc(nStorage, Sizeof.FLOAT * x.shape.product)
+  val kernelParams = Pointer.to(
+    Pointer.to(Array(x.shape.product)),
+    Pointer.to(x.storage),
+    Pointer.to(nStorage)
+  )
+  val blockSize = if (mBlockSize > x.shape.product) x.shape.product else mBlockSize
+  val gridSize = (x.shape.product + mBlockSize - 1) / mBlockSize
+  cernelExecute("src/main/resources/activationFunction.ptx", "tanhaf", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
+  new CudaStorage(nStorage, x.shape)
+
 def crossEntropyLoss(pr: CudaStorage, target: CudaStorage, mBlockSize: Int = 1024): CudaStorage =
   val nStorage = Pointer()
   cudaMalloc(nStorage, Sizeof.FLOAT * target.shape.product)
