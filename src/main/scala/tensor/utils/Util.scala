@@ -7,7 +7,10 @@ import jcuda.runtime._
 import jcuda.runtime.JCuda._
 import jcuda.Sizeof
 import jcuda.jcublas.*
+import scuda.tensor.Tensor
 
+import scala.io.Source
+import scala.collection.parallel.CollectionConverters._
 
 def beautifulArrayprint[T](storage: Array[T], shape: Seq[Int]): String = 
 	if storage.isEmpty then return "[]"
@@ -42,3 +45,22 @@ implicit class FloatOps(v: Float):
 		Storage.fill(obj, v) / obj
 	def *(obj: Storage): Storage =
 		obj * v
+
+def readCsv(path: String, isHeader: Boolean = false, splitSign: String = ",", isGrad: Boolean = false)(using device: String = "cpu"): Tensor =
+	var res = Source.fromFile(path)
+		.getLines()
+		.toArray
+		.par
+		.map(line => line.trim().split(splitSign))
+
+	val data = if isHeader then res.tail else res
+	val m = data.length
+	val n = data(0).length
+
+	data.foreach{line =>
+		if line.length != n then throw new Exception(s"readCsv: different lenght of rows in file: $path.")
+	}
+
+
+	Tensor(data.flatten.map(_.toFloat).toArray, Seq(m, n), isGrad)
+
