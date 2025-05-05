@@ -5,8 +5,8 @@ import scuda.tensor.cuda.CudaStorage
 
 class TensorMainOperationTest extends AnyFunSuite:
 	def tensorEqual(a: Tensor, b: Tensor): Boolean = 
-		val st1 = a.storage.toCpu().storage
-		val st2 = b.storage.toCpu().storage
+		val st1 = a.storage.toCpu.storage
+		val st2 = b.storage.toCpu.storage
 		val d = 0.0001
 		(0 until st1.length)
 		.map(i => math.abs(st1(i) - st2(i)) < d).reduce(_ && _) &&  a.storage.shape == b.storage.shape
