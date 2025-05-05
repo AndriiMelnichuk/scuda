@@ -8,14 +8,14 @@ class LossGradTest extends AnyFunSuite:
 
 	val d= 0.001
 	def tensorEqual(a: Tensor, b: Tensor): Boolean = 
-		val st1 = a.storage.toCpu().storage
-		val st2 = b.storage.toCpu().storage
+		val st1 = a.storage.toCpu.storage
+		val st2 = b.storage.toCpu.storage
 		(0 until st1.length)
 		.map(i => math.abs(st1(i) - st2(i)) < d).reduce(_ && _) &&  a.storage.shape == b.storage.shape
 	
 	def storageEqual(a: Storage, b: Storage): Boolean = 
-		val sx = a.toCpu().storage
-		val sy = b.toCpu().storage
+		val sx = a.toCpu.storage
+		val sy = b.toCpu.storage
 		(0 until sx.length)
 		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _) &&  a.shape == b.shape
 

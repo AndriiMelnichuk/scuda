@@ -6,8 +6,8 @@ import scuda.tensor.cpu.ArrayStorage
 
 class TensorOperationGradTest extends AnyFunSuite:
 	def storageEqual(a: Storage, b: Storage): Boolean = 
-		val sx = a.toCpu().storage
-		val sy = b.toCpu().storage
+		val sx = a.toCpu.storage
+		val sy = b.toCpu.storage
 		val d = 0.0001
 		(0 until sx.length)
 		.map(i => math.abs(sx(i) - sy(i)) < d).reduce(_ && _) &&  a.shape == b.shape
