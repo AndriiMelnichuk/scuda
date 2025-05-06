@@ -158,7 +158,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 		val a = this
 		new Tensor(new GeneralFunction {
 			lazy val args: Seq[Tensor] = Seq(a)
-			lazy val forward = storage.toCpu()
+			lazy val forward = storage.toCpu
 			def backward(arg: Tensor, chainGrad: Storage) = 
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a.toCpu can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
@@ -177,7 +177,7 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a.toCuda can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
 				storage match
-					case x: ArrayStorage if x == arg.storage => chainGrad.toCpu()
+					case x: ArrayStorage if x == arg.storage => chainGrad.toCpu
 					case x: CudaStorage if x == arg.storage  => chainGrad
 					case _                         => Storage.zeros(arg.storage)
 		}, hasVar)
