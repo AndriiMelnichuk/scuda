@@ -3,6 +3,8 @@ package scuda.tensor.storage
 import scuda.tensor.cpu.ArrayStorage
 import scuda.tensor.cuda.CudaStorage
 
+import scala.collection.parallel.CollectionConverters._
+
 trait Storage:
 	val shape: Seq[Int]
 	override def toString(): String
@@ -26,6 +28,22 @@ trait Storage:
 	// reduce
 	def sum: Storage
 	def item: Float
+	def split(dim: Int = 0, size: Int = 1): Seq[Storage] = 
+		require(dim >= 0)
+		require(dim < shape.length)
+
+		val nShape = shape.updated(dim, 1)
+		(0 until shape(dim))
+		.map{ i =>
+			println(s"INFO: \n${Seq.fill(dim)(-1).appended(i)}")
+			this(Seq.fill(dim)(-1).appended(i))
+		}
+		.grouped(size).toSeq.par
+		.map{ x =>
+			println(s"INFO: \n $x")
+			x.reduce((x, y) => x.reshape(nShape).cat(y.reshape(nShape), dim) )
+		}.seq
+
 
 	def T: Storage
 	def reshape(seq: Int*): Storage = 
