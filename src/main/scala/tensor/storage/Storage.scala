@@ -76,3 +76,6 @@ object Storage:
 			case "cpu" => ArrayStorage.rand(shape)
 			case "cuda" => CudaStorage.rand(shape)
 			case _ => throw new Exception("Unknown device host")
+
+	def arange(n: Int)(using device: String = "cpu"): Storage =
+		Storage((0 until n).map(_.toFloat), Seq(n))

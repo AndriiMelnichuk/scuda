@@ -271,7 +271,8 @@ object Tensor:
 	def rand(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
 		val r = Random()
 		fill(shape, r.nextFloat(), isGrad)
-
+	def arrange(n: Int, isGrad: Boolean = false) = 
+		apply(Storage((0 until n).map(_.toFloat), Seq(n)), isGrad)
 		
 
 
