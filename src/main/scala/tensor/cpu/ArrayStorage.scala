@@ -115,9 +115,14 @@ class ArrayStorage(
 		@tailrec
 		def helper(st: ArrayStorage, args: Seq[Int | Iterable[Int]], ax: Int = 0): ArrayStorage = 
 			args match
-				case Nil                         => st
-				case (i: Int) +: tail            => helper(selectByAxis(st, ax, i), tail, ax + 1)
-				case (it: Iterable[Int]) +: tail => helper(selectByAxes(st, ax, it.toSeq), tail, ax + 1)
+				case Nil => st
+				case (i: Int) +: tail => 
+					val res = selectByAxis(st, ax, i)
+					helper(res, tail, ax)
+				case (it: Iterable[Int]) +: tail => 
+					val res = selectByAxes(st, ax, it.toSeq)
+					val nax = if res.shape.length < st.shape.length then ax else ax + 1
+					helper(res, tail, nax)
 		if args.length > shape.length then throw new Exception("Too many axes")
 		helper(this, args)
 		
