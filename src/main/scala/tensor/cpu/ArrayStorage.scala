@@ -118,7 +118,8 @@ class ArrayStorage(
 				case Nil => st
 				case (i: Int) +: tail => 
 					val res = selectByAxis(st, ax, i)
-					helper(res, tail, ax)
+					val nax = if res.shape.length < st.shape.length then ax else ax + 1
+					helper(res, tail, nax)
 				case (it: Iterable[Int]) +: tail => 
 					val res = selectByAxes(st, ax, it.toSeq)
 					val nax = if res.shape.length < st.shape.length then ax else ax + 1
