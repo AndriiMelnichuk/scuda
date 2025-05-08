@@ -41,8 +41,8 @@ object ForwardLayer:
 class ReLU() extends ReplicatibleFunction:
 	def apply(x: Tensor): Tensor = 
 		new Tensor(new GeneralFunction {
-				lazy val args: Seq[Tensor] = Seq(x)
-				lazy val forward = scuda.tensor.storage.relu(x.storage)
+				val args: Seq[Tensor] = Seq(x)
+				val forward = scuda.tensor.storage.relu(x.storage)
 				def backward(arg: Tensor, chainGrad: Storage) = 
 					scuda.tensor.storage.reluGrad(forward, chainGrad)
 			}, x.hasVar)
@@ -52,8 +52,8 @@ class ReLU() extends ReplicatibleFunction:
 class Sigmoid() extends ReplicatibleFunction:
   def apply(x: Tensor): Tensor = 
     new Tensor(new GeneralFunction {
-        lazy val args: Seq[Tensor] = Seq(x)
-        lazy val forward = scuda.tensor.storage.sigmoid(x.storage)
+        val args: Seq[Tensor] = Seq(x)
+        val forward = scuda.tensor.storage.sigmoid(x.storage)
         def backward(arg: Tensor, chainGrad: Storage) = 
           scuda.tensor.storage.sigmoidGrad(forward, chainGrad)
       }, x.hasVar)
@@ -63,8 +63,8 @@ class Sigmoid() extends ReplicatibleFunction:
 class Tanh() extends ReplicatibleFunction:
   def apply(x: Tensor): Tensor = 
     new Tensor(new GeneralFunction {
-        lazy val args: Seq[Tensor] = Seq(x)
-        lazy val forward = scuda.tensor.storage.tanh(x.storage)
+        val args: Seq[Tensor] = Seq(x)
+        val forward = scuda.tensor.storage.tanh(x.storage)
         def backward(arg: Tensor, chainGrad: Storage) = 
           scuda.tensor.storage.tanhGrad(forward, chainGrad)
       }, x.hasVar)
@@ -85,8 +85,8 @@ class Sequential(layers: Seq[ReplicatibleFunction]) extends ReplicatibleFunction
 class StableSoftmax() extends ReplicatibleFunction:
 	def apply(x: Tensor): Tensor = 
 		new Tensor(new GeneralFunction {
-				lazy val args: Seq[Tensor] = Seq(x)
-				lazy val forward = stableSoftmax(x.storage)
+				val args: Seq[Tensor] = Seq(x)
+				val forward = stableSoftmax(x.storage)
 				def backward(arg: Tensor, chainGrad: Storage) = stableSoftmaxGrad(forward, chainGrad)
 			}, x.hasVar)
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction = StableSoftmax()

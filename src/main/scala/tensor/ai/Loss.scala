@@ -8,8 +8,8 @@ import scuda.tensor.storage.crossEntropyLossGrad
 def crossEntropyLoss(prediction: Tensor, target: Tensor): Tensor =
 
   val res = new Tensor(new GeneralFunction {
-    lazy val args: Seq[Tensor] = Seq(prediction)
-    lazy val forward: Storage = scuda.tensor.storage.crossEntropyLoss(prediction.storage, target.storage)
+    val args: Seq[Tensor] = Seq(prediction)
+    val forward: Storage = scuda.tensor.storage.crossEntropyLoss(prediction.storage, target.storage)
     def backward(argument: Tensor, chainGrad: Storage): Storage = 
       crossEntropyLossGrad(prediction.storage, target.storage, chainGrad)
   }, prediction.hasVar)

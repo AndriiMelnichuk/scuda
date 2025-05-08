@@ -2,8 +2,6 @@ package scuda.tensor.storage
 
 import scuda.tensor.cuda.*
 import scuda.tensor.cpu.*
-import scuda.tensor.cuda.CudaStorage
-import scuda.tensor.cpu.ArrayStorage
 
 
 def relu(x: Storage): Storage = x match

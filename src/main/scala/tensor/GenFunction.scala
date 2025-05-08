@@ -11,8 +11,8 @@ import jcuda.driver.JCudaDriver
 import storage.Storage
 
 trait GeneralFunction:
-	lazy val args: Seq[Tensor]
-	lazy val forward: Storage
+	val args: Seq[Tensor]
+	val forward: Storage
 	def backward(argument: Tensor, chainGrad: Storage): Storage
 	def elementalBackward(chainGrad: Storage): Seq[Storage] = 
 		args.map(backward(_, chainGrad))
