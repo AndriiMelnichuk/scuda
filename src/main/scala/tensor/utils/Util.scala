@@ -92,3 +92,27 @@ def readImg(path: String, isGrad: Boolean = false)(using device: String = "cpu")
 	}
 
 	Tensor(imgArray, Seq(3, h, w), isGrad) / 255
+
+
+def reverseBroadcasting(x: Storage, s: Seq[Int]): Storage = 
+  def helper(x: Storage, ax: Seq[Int]): Storage = 
+    ax match
+      case Nil => x
+      case h :: t =>
+        val newAx = s.map(_ - 1)
+        val newStorage = x.sum(h)
+        helper(newStorage, t)
+  if x.shape == s then x
+  else
+    val axes = (0 until x.shape.length).filter(ax => x.shape(ax) != s(ax))
+    helper(x, axes)
+
+
+  
+
+
+
+
+
+
+

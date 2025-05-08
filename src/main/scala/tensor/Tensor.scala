@@ -15,6 +15,7 @@ import scala.compiletime.ops.float
 import scala.collection.parallel.CollectionConverters._
 import scala.util.Random
 import storage.Storage
+import scuda.tensor.utils.reverseBroadcasting
 
 // TODO cat
 // hasVar - is variable is in graph
@@ -33,8 +34,9 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a + b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
-				if a == arg || b == arg then   chainGrad
-				else                           Storage.zeros(arg.storage)
+				if      a == arg then reverseBroadcasting(chainGrad, a.storage.shape)
+				else if b == arg then reverseBroadcasting(chainGrad, b.storage.shape)
+				else                  Storage.zeros(arg.storage)
 		}, a.hasVar || b.hasVar)
 
 	def -(other: Tensor) = 
@@ -46,9 +48,9 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a - b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
-				if arg == a then        chainGrad
-				else if arg == b then   -chainGrad
-				else                    Storage.zeros(arg.storage)
+				if      a == arg then reverseBroadcasting(chainGrad, a.storage.shape)
+				else if b == arg then reverseBroadcasting(-chainGrad, b.storage.shape)
+				else                  Storage.zeros(arg.storage)
 		}, a.hasVar || b.hasVar)
 
 	def *(other: Tensor) = 
@@ -60,9 +62,9 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a * b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
-				if arg == a then        chainGrad * b.storage
-				else if arg == b then   chainGrad * a.storage
-				else                    Storage.zeros(arg.storage)
+				if      a == arg then reverseBroadcasting(chainGrad * b.storage, a.storage.shape)
+				else if b == arg then reverseBroadcasting(chainGrad * a.storage, b.storage.shape)
+				else                  Storage.zeros(arg.storage)
 
 		}, a.hasVar || b.hasVar)
 
@@ -75,9 +77,9 @@ case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
 			def backward(arg: Tensor, chainGrad: Storage) =
 				if forward.shape != chainGrad.shape then 
 					throw new Exception(s"Gradient a / b can't be found if forward.shape != chainGrad.shape.\nchainGrad: ${chainGrad.shape}, forward: ${forward.shape}")
-				if arg == a then        chainGrad / b.storage
-				else if arg == b then   -chainGrad * a.storage / (b.storage pow 2)
-				else                    Storage.zeros(arg.storage)
+				if      a == arg then reverseBroadcasting(chainGrad / b.storage, a.storage.shape)
+				else if b == arg then reverseBroadcasting(-chainGrad * a.storage / (b.storage pow 2), b.storage.shape)
+				else                  Storage.zeros(arg.storage)
 		}, a.hasVar || b.hasVar)
 
 	def **(other: Tensor) = 
