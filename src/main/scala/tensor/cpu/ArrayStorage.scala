@@ -67,8 +67,6 @@ class ArrayStorage(
 
 	// reduce
 	def sum: ArrayStorage = ArrayStorage(Array(storage.par.reduce(_ + _)), Seq(1))
-	def sum(axis: Int = 0) = 
-		???
 	def item: Float = 
 		if shape == Seq(1) then storage(0)
 		else throw new Exception("It is impossible to take an element from the storage if shape != Seq(1)")
@@ -127,7 +125,6 @@ class ArrayStorage(
 		if args.length > shape.length then throw new Exception("Too many axes")
 		helper(this, args)
 		
-
 	def cat(st: Storage, dim: Int = 0): ArrayStorage = 
 		st match
 			case st: ArrayStorage => 	

@@ -35,15 +35,16 @@ trait Storage:
 		val nShape = shape.updated(dim, 1)
 		(0 until shape(dim))
 		.map{ i =>
-			println(s"INFO: \n${Seq.fill(dim)(-1).appended(i)}")
 			this(Seq.fill(dim)(-1).appended(i))
 		}
 		.grouped(size).toSeq.par
 		.map{ x =>
-			println(s"INFO: \n $x")
 			x.reduce((x, y) => x.reshape(nShape).cat(y.reshape(nShape), dim) )
 		}.seq
 
+	def sum(axis: Int = 0): Storage = 
+		split(axis).reduce(_ + _)
+		
 
 	def T: Storage
 	def reshape(seq: Int*): Storage = 
