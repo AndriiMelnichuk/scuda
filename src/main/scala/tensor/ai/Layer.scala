@@ -16,15 +16,10 @@ trait ReplicatibleFunction:
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ReplicatibleFunction
 
 class ForwardLayer(val w: Tensor, val b: Tensor) extends ReplicatibleFunction:
-	def apply(x: Tensor): Tensor = 
-		val be = heightExpander(b, x.storage.shape(0))
-		val res = x ** (w.T) + be
-		new Tensor(new GeneralFunction {
-			lazy val args: Seq[Tensor] = res.origin.args
-			lazy val forward = res.storage
-			def backward(arg: Tensor, chainGrad: Storage) = res.origin.backward(arg, chainGrad)
-				
-		}, x.hasVar || b.hasVar || w.hasVar)
+	require(w.storage.shape.length == 2)
+	require(b.storage.shape.length == 2)
+	require(w.storage.shape(0) == w.storage.shape(0))
+	def apply(x: Tensor): Tensor = x ** w.T + b.T
 
 	def replicate(grad: Map[Tensor, Storage], opt: Optimizer): ForwardLayer = 
 		val newW = opt(w.storage, grad(w))
