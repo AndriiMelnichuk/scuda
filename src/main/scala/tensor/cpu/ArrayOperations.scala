@@ -102,3 +102,23 @@ def broadcasting(x: ArrayStorage, shape: Seq[Int]): ArrayStorage =
 			recursiveBroadcasting(res, n - 1)
 	shapeCheck(x.shape, shape)
 	recursiveBroadcasting(x.storage, shape.length - 1)
+
+def createFeatureForConv(x: ArrayStorage, lhiX: Int, lhiY: Int, imgN: Int, kernelSize: Int): Seq[Float] = 
+	// lhi - left high index
+	// x.shape.length = 4 - N x C x H x W
+	val C = x.shape(1)
+	val H = x.shape(2)
+	val W = x.shape(3)
+
+	val seqC = 0 until C
+	val seqH = lhiY until lhiY + kernelSize
+	val seqW = lhiX until lhiX + kernelSize
+
+	for 
+		c <- seqC
+		h <- seqH
+		w <- seqW
+	yield 
+		if      h >= H || h < 0 then 0
+		else if w >= W || w < 0 then 0 
+		else x.storage(C * H * W * imgN + H * W * c + W * h + w)

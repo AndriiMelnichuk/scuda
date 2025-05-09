@@ -42,3 +42,23 @@ __global__ void indexSelection(int s, int a, int f, int n, float *input, float *
 		output[i] = input[index];
 	}
 }
+
+
+extern "C"
+__global__ void createFeatureForConv(
+	int C, int H, int W, 
+	int lhiX, int lhiY, int imgN, 
+	int kernelSize, float *input, float *output)
+	{
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	if (i < kernelSize * kernelSize * C){
+		int c = i / kernelSize / kernelSize;
+		int h = lhiY + i / kernelSize % kernelSize;
+		int w = lhiX + i % kernelSize;
+		
+		float res = 0;
+		if (!(h >= H || h < 0 || w >= W || w < 0))
+			res = input[C * H * W * imgN + H * W * c + W * h + w];
+		output[i] = res;
+	}
+}

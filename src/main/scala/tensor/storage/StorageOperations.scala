@@ -50,3 +50,42 @@ def stableSoftmaxGrad(sm: Storage, cg: Storage): Storage = (sm, cg) match
 	case (x: CudaStorage, y: CudaStorage)   => scuda.tensor.cuda.stableSoftmaxGrad(x, y)
 	case _                                  => throw new IllegalArgumentException("Mismatched or unsupported storage types for crossEntropyLossGrad")
 
+def conv2D(x: Storage, w: Storage, b: Storage, kernelSize: Int = 1, stride: Int = 1, padding: Int = 0): Storage = 
+	def createFeatureForConv(x: Storage, lhiX: Int, lhiY: Int, imgN: Int, kernelSize: Int): Seq[Float] = 
+		x match
+			case x: CudaStorage  => scuda.tensor.cuda.createFeatureForConv(x, lhiX, lhiY, imgN, kernelSize)
+			case x : ArrayStorage => scuda.tensor.cpu.createFeatureForConv(x, lhiX, lhiY, imgN, kernelSize)
+	def convPerFMCount(w: Int): Int =
+		(w + 2 * padding - kernelSize) / stride + 1
+	def indexForConvSelector(w: Int): Seq[Int] =
+		(0 until convPerFMCount(w)).map( _ * stride - padding)
+	def createFullFeatureTensor: Storage =
+		val h = x.shape(2)
+		val w = x.shape(3)
+
+		val res = for 
+			z <- 0 until x.shape(0)
+			y <- indexForConvSelector(h)
+			xx <- indexForConvSelector(w)
+		yield
+			createFeatureForConv(x, xx, y, z, kernelSize)
+
+		val m = res.length
+		val n = res(0).length
+		val t = res.flatten
+		x match
+			case _: CudaStorage  => CudaStorage(res.flatten, Seq(m,n))
+			case _: ArrayStorage => ArrayStorage(res.flatten, Seq(m,n))
+
+	val prX    = createFullFeatureTensor
+	val imC    = x.shape(0)
+	val width  = x.shape(3)
+	val height = x.shape(2)
+	val fo     = w.shape(0)
+	val prW    = w.flatten(1).T
+	
+	(prX ** prW + b).T
+	.reshape(fo, imC, convPerFMCount(height) * convPerFMCount(width))
+	.split(1)
+	.reduce(_.cat(_, 0))
+	.reshape(imC,fo,convPerFMCount(height), convPerFMCount(width))

@@ -9,6 +9,7 @@ import jcuda.driver.JCudaDriver._
 import jcuda.runtime.cudaMemcpyKind
 import jcuda.driver.CUmodule
 import jcuda.driver.CUfunction
+import scuda.tensor.utils.device2host
 
 /**
  * Runs cuda kernels implementing element-by-element operations on 2 tensors
@@ -289,3 +290,32 @@ def broadcasting(x: CudaStorage, shape: Seq[Int], mBlockSize: Int = 1024): CudaS
 				cudaFree(a)
 			recursiveBroadcasting(nStorage, n - 1)
 	recursiveBroadcasting(x.storage, shape.length - 1)
+
+def createFeatureForConv(x: CudaStorage, lhiX: Int, lhiY: Int, imgN: Int, kernelSize: Int): Seq[Float] = 
+	val mBlockSize = 1024
+	val C = x.shape(1)
+	val H = x.shape(2)
+	val W = x.shape(3)
+	val nStorage = Pointer()
+	cudaMalloc(nStorage, Sizeof.FLOAT * C * kernelSize * kernelSize)
+	
+	val kernelParams = Pointer.to(
+		Pointer.to(Array(C)),
+		Pointer.to(Array(H)),
+		Pointer.to(Array(W)),
+		Pointer.to(Array(lhiX)),
+		Pointer.to(Array(lhiY)),
+		Pointer.to(Array(imgN)),
+		Pointer.to(Array(kernelSize)),
+		Pointer.to(x.storage),
+		Pointer.to(nStorage)
+	)
+	val blockSize = if (mBlockSize > x.shape.product) x.shape.product else mBlockSize
+	val gridSize = (x.shape.product + mBlockSize - 1) / mBlockSize
+	cernelExecute("src/main/resources/util.ptx", "createFeatureForConv", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
+
+	val res = device2host(nStorage, Seq(C, kernelSize, kernelSize))
+	cudaFree(nStorage)
+	res
+	
+	
