@@ -17,12 +17,13 @@ import scala.util.Random
 import storage.Storage
 import scuda.tensor.utils.reverseBroadcasting
 
-// TODO cat
+// TODO cat, reshape
 // hasVar - is variable is in graph
 // hasVar + origin.isEmpty => variable wich will have gradient
 case class Tensor(val origin: GeneralFunction, val hasVar: Boolean):
-	lazy val storage: Storage = origin.forward
-	
+	val storage: Storage = origin.forward
+	val shape: Seq[Int] = storage.shape
+
 	override def toString(): String = storage.toString()
 	
 	def +(other: Tensor) = 
@@ -273,7 +274,7 @@ object Tensor:
 	def rand(shape: Seq[Int], isGrad: Boolean = false)(using device: String = "cpu") =
 		val r = Random()
 		fill(shape, r.nextFloat(), isGrad)
-	def arrange(n: Int, isGrad: Boolean = false) = 
+	def arange(n: Int, isGrad: Boolean = false) = 
 		apply(Storage((0 until n).map(_.toFloat), Seq(n)), isGrad)
 		
 

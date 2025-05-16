@@ -15,9 +15,12 @@ __global__ void cat(int m, float *x, float *y, int xSize, int ySize, float *outp
 extern "C"
 __global__ void matrixTransposition(int m, int n, float *input, float *output){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	if(i < n && j < m)
-		output[i * m + j] = input[j * n + i];
+	if(i < n * m){
+		int IdxI = i % n;
+		int IdxJ = i / n;
+		output[IdxI * m + IdxJ] = input[n * IdxJ + IdxI];
+	}
+		
 }
 
 extern "C"

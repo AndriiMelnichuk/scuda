@@ -122,3 +122,4 @@ def createFeatureForConv(x: ArrayStorage, lhiX: Int, lhiY: Int, imgN: Int, kerne
 		if      h >= H || h < 0 then 0
 		else if w >= W || w < 0 then 0 
 		else x.storage(C * H * W * imgN + H * W * c + W * h + w)
+	

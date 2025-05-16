@@ -30,7 +30,7 @@ class CudaStorage(
 	def elementwiseScalarOperation(other: Float, ptxFile: String, opName: String): CudaStorage = 
 		elementwiseScalarCernelExecuter(this, other, ptxFile, opName)
 
-	override def toString(): String = beautifulArrayprint(device2host(storage, shape), shape)
+	override def toString(): String = beautifulArrayprint(device2host(storage, shape.product), shape)
 	override def finalize() = cudaFree(storage)
 
 	private val elementwiseCernelPath = "src/main/resources/tesorElementwiseOperatins.ptx"
@@ -67,6 +67,7 @@ class CudaStorage(
 					this.storage, k,
 					Pointer.to(Array[Float](0.0f)),
 					res, n)
+					cudaDeviceSynchronize()
 				new CudaStorage(res, Seq(m, n))
 			case _ => 
 				throw new Exception("Operation cannot be performed if devise isn't same.")
@@ -84,7 +85,7 @@ class CudaStorage(
 	def unary_- = this * -1
 
 	// device change
-	def toCpu: ArrayStorage = new ArrayStorage(device2host(storage, shape), shape)
+	def toCpu: ArrayStorage = new ArrayStorage(device2host(storage, shape.product), shape)
 	def toCuda: CudaStorage = this
 
 	// reduce
@@ -106,16 +107,15 @@ class CudaStorage(
 		val nStorage = Pointer()
 		cudaMalloc(nStorage, Sizeof.FLOAT * shape.product)
 		val kernelParams = Pointer.to(
-			Pointer.to(Array(shape(0))),
-			Pointer.to(Array(shape(1))),
+			Pointer.to(Array(m)),
+			Pointer.to(Array(n)),
 			Pointer.to(storage),
 			Pointer.to(nStorage)
 		)
-		val bsx = if mBlockSize > m then m else mBlockSize
-		val gsx = (m + mBlockSize - 1) / mBlockSize
-		val bsy = if mBlockSize > n then n else mBlockSize
-		val gsy = (n + mBlockSize - 1) / mBlockSize
-		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsy, gridDimY = gsx, blockDimX = bsy, blockDimY = bsx)
+		val bsx = if mBlockSize > m * n then m * n else mBlockSize
+		val gsx = (m * n + mBlockSize - 1) / mBlockSize
+		cernelExecute("src/main/resources/util.ptx", "matrixTransposition", kernelParams, gridDimX = gsx, blockDimX = bsx)
+		cudaDeviceSynchronize()
 		new CudaStorage(nStorage, shape.reverse)
 
 	def reshape(seq: Iterable[Int]): CudaStorage = 
@@ -123,7 +123,7 @@ class CudaStorage(
 		require(seq.product == shape.product, "CudaStorage: size of the data must correspond to shape")
 		require(seq.map(_ > 0).reduce(_ && _), "CudaStorage: shape must not contain dim < 0")
 		new CudaStorage(storage, seq.toSeq)
-
+		
 	def apply(args: Seq[Int | Iterable[Int]]): CudaStorage = 
 		val mBlockSize = 1024
 		def selectByAxis(x: CudaStorage, axis: Int = 0, axisN: Int = 0): CudaStorage = 

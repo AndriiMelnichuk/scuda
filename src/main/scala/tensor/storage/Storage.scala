@@ -50,6 +50,8 @@ trait Storage:
 	def reshape(seq: Int*): Storage = 
 		reshape(seq.toIterable)
 	def reshape(seq: Iterable[Int]): Storage
+	def unsqueeze(ax: Int = 0): Storage =
+		reshape(shape.patch(ax, Seq(1), 0))
 	def apply(args: Seq[Int | Iterable[Int]]): Storage
 	def flatten(from: Int = 0, to: Int = shape.length) =
 		require(from >= 0)

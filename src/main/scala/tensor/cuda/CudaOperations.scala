@@ -314,7 +314,7 @@ def createFeatureForConv(x: CudaStorage, lhiX: Int, lhiY: Int, imgN: Int, kernel
 	val gridSize = (x.shape.product + mBlockSize - 1) / mBlockSize
 	cernelExecute("src/main/resources/util.ptx", "createFeatureForConv", kernelParams, gridDimX = gridSize, blockDimX = blockSize)
 
-	val res = device2host(nStorage, Seq(C, kernelSize, kernelSize))
+	val res = device2host(nStorage, C * kernelSize * kernelSize)
 	cudaFree(nStorage)
 	res
 	
